@@ -14,7 +14,7 @@ export const App: React.FC = () => {
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <Home />;
+        return <Home setCurrentPage={setCurrentPage} />;
       case 'fan-assistant':
         return <FanAssistant />;
       case 'staff-command':
@@ -26,7 +26,7 @@ export const App: React.FC = () => {
       case 'project-details':
         return <ProjectDetails />;
       default:
-        return <Home />;
+        return <Home setCurrentPage={setCurrentPage} />;
     }
   };
 

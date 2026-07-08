@@ -129,3 +129,14 @@ footer {
   border-top: 1px solid #1f2937;
   margin-top: auto;
 }
+
+/* Simulated telemetry status styles */
+.status-normal {
+  background-color: #0f9d58 !important;
+}
+.status-elevated {
+  background-color: #f4b400 !important;
+}
+.status-critical {
+  background-color: #db4437 !important;
+}

@@ -5,7 +5,7 @@ import App from '../App';
 describe('Matchday Command Base Application', () => {
   it('renders Matchday Command title and tagline', () => {
     render(<App />);
-    expect(screen.getByText('Matchday Command')).toBeInTheDocument();
-    expect(screen.getByText(/GenAI stadium operations/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Matchday Command' })).toBeInTheDocument();
+    expect(screen.getAllByText(/GenAI stadium operations/i)[0]).toBeInTheDocument();
   });
 });
