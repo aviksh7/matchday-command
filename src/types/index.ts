@@ -90,3 +90,10 @@ export interface VenueData {
   sustainability: SustainabilityMetrics;
   incidents: IncidentData[];
 }
+
+export interface AssistantResponse {
+  answer: string;
+  action: string;
+  telemetryUsed: string;
+  disclaimer: string;
+}

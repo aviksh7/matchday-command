@@ -6,3 +6,8 @@ import { cleanup } from '@testing-library/react';
 afterEach(() => {
   cleanup();
 });
+
+// Mock scrollIntoView for JSDOM
+if (typeof window !== 'undefined') {
+  window.HTMLElement.prototype.scrollIntoView = function() {};
+}
