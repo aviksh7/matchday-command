@@ -4,7 +4,7 @@ export const IncidentSupport: React.FC = () => {
   return (
     <div className="page-container">
       <h2>Incident Support & Action Plans</h2>
-      <p>Simulated incident log queue with GenAI-generated incident response action plans.</p>
+      <p>Simulated incident log queue with simulated incident support planning.</p>
       
       <div className="card">
         <h3>Active Incident Queue (Simulated)</h3>

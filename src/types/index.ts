@@ -97,3 +97,12 @@ export interface AssistantResponse {
   telemetryUsed: string;
   disclaimer: string;
 }
+
+export interface PriorityQueueItem {
+  id: string;
+  type: 'Incident' | 'Gate Pressure' | 'Crowd Density';
+  location: string;
+  details: string;
+  severity: 'Low' | 'Medium' | 'High';
+}
+

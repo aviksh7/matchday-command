@@ -80,7 +80,7 @@ export const App: React.FC = () => {
 
       <main>
         <div className="disclaimer-banner" role="alert">
-          <strong>Important Notice:</strong> This application is a simulated prototype demo for the Build with AI 2026 Challenge. All map, crowd, routing, wait time, incident, and operations data shown are simulated prototype data. It does not access real-time tournament systems.
+          <strong>Important Notice:</strong> This application is a simulated prototype demo for the Build with AI 2026 Challenge. All map, crowd, routing, wait time, incident, and operations data shown are simulated prototype data. It does not access external tournament systems.
         </div>
         {renderPage()}
       </main>

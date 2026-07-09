@@ -263,7 +263,7 @@ Click one of the quick action prompts below or enter a custom question to see si
 
           <div className="card" style={{ padding: '1.25rem', background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 0 }}>
             <strong style={{ display: 'block', color: 'var(--text-color)', marginBottom: '0.25rem' }}>Simulation Stance Disclaimer</strong>
-            This assistant prototype uses only simulated crowd telemetry and mock venue status data. It does not connect to real FIFA databases, ticketing gateways, emergency medical dispatch, or live public transit feeds.
+            This assistant prototype uses only simulated crowd telemetry and mock venue status data. It does not connect to external databases, ticketing gateways, emergency medical dispatch, or public transit feeds.
           </div>
 
         </div>

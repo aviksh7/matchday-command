@@ -44,7 +44,7 @@ export const getSimulatedAssistantResponse = (
           answer: `All gates are currently showing as closed in the simulated system.`,
           action: `Please wait for announcements or approach stadium guest services for direct instructions.`,
           telemetryUsed: `Simulated gates: ${venue.gates.map(g => `${g.name} (Closed)`).join(', ')}.`,
-          disclaimer: `Simulated response based on prototype data. This is not a live or official gate status.`
+          disclaimer: `Simulated response based on prototype data. This is not an authorized or current gate status.`
         };
       }
       
@@ -55,7 +55,7 @@ export const getSimulatedAssistantResponse = (
         answer: `Based on simulated stadium telemetry, ${leastCrowded.name} is recommended as it has the lowest intake pressure (${leastCrowded.percentage}% load).`,
         action: `Proceed to ${leastCrowded.name} to minimize entrance wait times.`,
         telemetryUsed: `Simulated gates telemetry: ${allGatePressures}.`,
-        disclaimer: `Simulated response based on prototype data. This does not access real-time stadium queues.`
+        disclaimer: `Simulated response based on prototype data. This does not access current stadium queue systems.`
       };
     }
 
@@ -132,7 +132,7 @@ export const getSimulatedAssistantResponse = (
         answer: `Simulated transit monitoring indicates that the ${lowestPressure.type} is operating with the lowest crowd pressure (${lowestPressure.crowdPressurePercentage}% load, status: ${lowestPressure.status}). The ${highestPressure.type} is showing high pressure (${highestPressure.crowdPressurePercentage}% load).`,
         action: `To avoid departure delays, we recommend routing via the ${lowestPressure.type} if it aligns with your travel plans.`,
         telemetryUsed: `Simulated transit statuses: ${venue.transitStatus.map(t => `${t.type} (${t.status}, ${t.crowdPressurePercentage}% pressure)`).join(', ')}.`,
-        disclaimer: `Simulated transit data. Not connected to real municipal transit feeds, live timetables, or GPS mapping services.`
+        disclaimer: `Simulated transit data. Not connected to real municipal transit feeds, current transit timetables, or GPS mapping services.`
       };
     }
 
@@ -152,9 +152,9 @@ export const getSimulatedAssistantResponse = (
         answer: `Simulated Multilingual Translation Placeholder for PA announcement ("${sampleAnnouncement}"):
 • Spanish: "Atención aficionados, por favor no corran en las rampas del corredor. Procedan despacio y cedan el paso a los carriles de sillas de ruedas."
 • French: "Attention aux supporters, veuillez ne pas courir sur les rampes du hall. Procédez lentement et cédez le passage aux voies pour fauteuils roulants."`,
-        action: `This is a prototype translation placeholder. In a future update, this action will be powered by the server-side Gemini API on Google Cloud Run to translate live PA announcements.`,
+        action: `This is a prototype translation placeholder. In a future update, this action will be powered by the server-side Gemini API on Google Cloud Run to translate sample announcement text.`,
         telemetryUsed: `Static PA announcement template template_01.`,
-        disclaimer: `Simulated translation placeholder. Does not guarantee real translation accuracy or connect to live public address systems.`
+        disclaimer: `Simulated translation placeholder. Does not guarantee real translation accuracy or connect to public address systems.`
       };
     }
 
@@ -162,8 +162,8 @@ export const getSimulatedAssistantResponse = (
       const escapedQuery = customQuery ? customQuery.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
       return {
         answer: `I received your query: "${escapedQuery || '...'}"
-
-This simulated prototype assistant is Gemini-ready. Natural language processing and real-time operations guidance will be powered by the Gemini API server-side on Google Cloud Run in a future milestone.`,
+ 
+This simulated prototype assistant is Gemini-ready. Natural language processing and context-aware prototype guidance will be powered by the Gemini API server-side on Google Cloud Run in a future milestone.`,
         action: `Try clicking one of the quick action buttons above, or search for keywords like "gates", "restrooms", "transit", "wheelchair", or "eco" to test the simulated telemetry grounding engine.`,
         telemetryUsed: `None (Keyword fallback trigger).`,
         disclaimer: `Simulated prototype response.`
