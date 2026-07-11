@@ -28,6 +28,14 @@ Runs the complete frontend unit/integration test suite along with the backend AP
 npm run test:all
 ```
 
+#### Local Vertex AI Integration Testing
+- **Automated tests**: Automated backend tests remain fully mocked and require no network access, ADC configuration, or active cloud credentials.
+- **Manual local testing**: To run the backend server locally and query the real Vertex AI service, you must authenticate your shell via:
+  ```bash
+  gcloud auth application-default login
+  ```
+  Ensure that `GOOGLE_CLOUD_PROJECT=matchday-command-2026` is exported in your environment.
+
 #### Perform Production Compile Check
 Runs the TypeScript type-checker (`tsc`) and Vite bundler to verify zero syntax, type, or asset compile errors:
 ```bash

@@ -1,19 +1,22 @@
-import { GoogleGenAI } from '@google/genai';
+import { createVertexClient } from './client.js';
 import { createApp } from './app.js';
 import dotenv from 'dotenv';
 
-// Load local environment variables (if any) for development.
-// In production, environments like Google Cloud Run inject keys from Secret Manager.
+// Load local environment variables for development.
+// In production, GOOGLE_CLOUD_PROJECT is automatically set on Cloud Run.
 dotenv.config();
 
-const apiKey = process.env.GEMINI_API_KEY;
-
-// Initialize the Google Gen AI client.
-// It will attempt to read GEMINI_API_KEY from environment variables.
-const ai = new GoogleGenAI({ apiKey });
+let ai;
+try {
+  ai = createVertexClient();
+} catch (error) {
+  // Fail fast: Log the error and exit before starting the web server.
+  console.error(`Startup Failure: ${error.message}`);
+  process.exit(1);
+}
 
 /**
- * Concrete generation function using the official @google/genai client.
+ * Generation function mapping to the Vertex AI GoogleGenAI client.
  */
 const generateContentFn = async (prompt, systemInstruction, responseSchema) => {
   const response = await ai.models.generateContent({
@@ -30,7 +33,7 @@ const generateContentFn = async (prompt, systemInstruction, responseSchema) => {
   return response.text;
 };
 
-// Instantiate the Express app with the production generator function.
+// Instantiate and start Express application
 const app = createApp({ generateContentFn });
 
 const PORT = process.env.PORT || 8080;

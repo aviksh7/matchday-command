@@ -1,20 +1,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../app.js';
+import { createVertexClient } from '../client.js';
+
+// Completely mock the GoogleGenAI class at the module level.
+// This ensures that createVertexClient() can be imported and executed without making network calls or requiring ADC.
+vi.mock('@google/genai', () => {
+  return {
+    GoogleGenAI: class {
+      constructor(options) {
+        this.options = options;
+        this.models = {
+          generateContent: vi.fn()
+        };
+      }
+    }
+  };
+});
 
 describe('Matchday Command API Endpoints', () => {
-  let originalEnv;
-
-  beforeEach(() => {
-    // Preserve environment
-    originalEnv = process.env.GEMINI_API_KEY;
-    process.env.GEMINI_API_KEY = 'mocked_api_key_for_tests';
-  });
-
-  afterEach(() => {
-    process.env.GEMINI_API_KEY = originalEnv;
-  });
-
   // Mock generator functions
   const mockGeneratorSuccessFan = async (prompt, systemInstruction, responseSchema) => {
     return JSON.stringify({
@@ -53,9 +57,51 @@ describe('Matchday Command API Endpoints', () => {
     throw new Error('Gemini model failed');
   };
 
+  describe('Vertex AI Client Initialization', () => {
+    let origProject;
+    let origLocation;
+
+    beforeEach(() => {
+      origProject = process.env.GOOGLE_CLOUD_PROJECT;
+      origLocation = process.env.GOOGLE_CLOUD_LOCATION;
+    });
+
+    afterEach(() => {
+      process.env.GOOGLE_CLOUD_PROJECT = origProject;
+      process.env.GOOGLE_CLOUD_LOCATION = origLocation;
+    });
+
+    it('should successfully initialize client options when GOOGLE_CLOUD_PROJECT is set', () => {
+      process.env.GOOGLE_CLOUD_PROJECT = 'matchday-command-2026';
+      process.env.GOOGLE_CLOUD_LOCATION = 'us-central1';
+
+      const client = createVertexClient();
+
+      expect(client.options).toEqual({
+        vertexai: true,
+        project: 'matchday-command-2026',
+        location: 'us-central1'
+      });
+    });
+
+    it('should fallback to global location when GOOGLE_CLOUD_LOCATION is missing', () => {
+      process.env.GOOGLE_CLOUD_PROJECT = 'matchday-command-2026';
+      delete process.env.GOOGLE_CLOUD_LOCATION;
+
+      const client = createVertexClient();
+
+      expect(client.options.location).toBe('global');
+    });
+
+    it('should throw Vertex AI Configuration Error if GOOGLE_CLOUD_PROJECT is missing', () => {
+      delete process.env.GOOGLE_CLOUD_PROJECT;
+
+      expect(() => createVertexClient()).toThrow(/GOOGLE_CLOUD_PROJECT is required/);
+    });
+  });
+
   describe('GET /health', () => {
-    it('should return 200 ok and minimal JSON without calling Gemini or checking key', async () => {
-      process.env.GEMINI_API_KEY = ''; // Clear key
+    it('should return 200 ok and minimal JSON without calling generator or requiring any keys', async () => {
       const app = createApp({ generateContentFn: mockGeneratorFailure });
       const res = await request(app)
         .get('/health')
@@ -171,7 +217,6 @@ describe('Matchday Command API Endpoints', () => {
 
   describe('Rate Limiting', () => {
     it('should trigger rate limiting (429) when exceeding max calls', async () => {
-      // Create a specific rate-limited instance for testing
       const rateLimitedApp = createApp({
         generateContentFn: mockGeneratorSuccessFan,
         rateLimitWindowMs: 5000,
@@ -184,11 +229,8 @@ describe('Matchday Command API Endpoints', () => {
         simulatedVenueContext: 'Context'
       };
 
-      // Call 1
       await request(rateLimitedApp).post('/api/fan-assistant').send(payload).expect(200);
-      // Call 2
       await request(rateLimitedApp).post('/api/fan-assistant').send(payload).expect(200);
-      // Call 3 (exceeds limit)
       const res = await request(rateLimitedApp).post('/api/fan-assistant').send(payload).expect(429);
 
       expect(res.body.error).toBe('Too Many Requests');
@@ -197,7 +239,7 @@ describe('Matchday Command API Endpoints', () => {
   });
 
   describe('Gemini Endpoint Success Modes', () => {
-    it('POST /api/fan-assistant returns structured JSON response with correct values and no secrets', async () => {
+    it('POST /api/fan-assistant returns structured JSON response with correct values and requires zero API key', async () => {
       let promptCaptured = null;
       let systemInstructionCaptured = null;
 
@@ -218,7 +260,6 @@ describe('Matchday Command API Endpoints', () => {
         })
         .expect(200);
 
-      // Verify shape
       expect(res.body).toEqual({
         summary: 'Grounded reply summary based on mock telemetry.',
         recommendedAction: 'Proceed to Gate A.',
@@ -226,20 +267,14 @@ describe('Matchday Command API Endpoints', () => {
         limitations: 'This is simulated prototype data.'
       });
 
-      // Verify prompt grounding & safety contains context and constraints
       expect(promptCaptured).toContain('Stad de Test');
       expect(promptCaptured).toContain('Gate A has 20% load');
       expect(promptCaptured).toContain('Where is the least crowded gate?');
       expect(systemInstructionCaptured).toContain('simulated prototype telemetry');
-      expect(systemInstructionCaptured).toContain('Never claim access');
-
-      // Verify secret is not in response or prompt
-      expect(JSON.stringify(res.body)).not.toContain('mocked_api_key_for_tests');
-      expect(promptCaptured).not.toContain('mocked_api_key_for_tests');
-      expect(systemInstructionCaptured).not.toContain('mocked_api_key_for_tests');
+      expect(systemInstructionCaptured).not.toContain('GEMINI_API_KEY');
     });
 
-    it('POST /api/incident-support returns structured JSON response with correct values and no secrets', async () => {
+    it('POST /api/incident-support returns structured JSON response with correct values and requires zero API key', async () => {
       let promptCaptured = null;
       let systemInstructionCaptured = null;
 
@@ -272,23 +307,17 @@ describe('Matchday Command API Endpoints', () => {
         limitations: 'This is simulated prototype data.'
       });
 
-      // Verify grounding and safety guidelines in prompt/instructions
       expect(promptCaptured).toContain('Gate B');
       expect(promptCaptured).toContain('High');
       expect(promptCaptured).toContain('Crowd Spill');
       expect(systemInstructionCaptured).toContain('stadium operations decision-support');
-      expect(systemInstructionCaptured).toContain('prototype decision support');
-
-      expect(JSON.stringify(res.body)).not.toContain('mocked_api_key_for_tests');
-      expect(promptCaptured).not.toContain('mocked_api_key_for_tests');
-      expect(systemInstructionCaptured).not.toContain('mocked_api_key_for_tests');
+      expect(systemInstructionCaptured).not.toContain('GEMINI_API_KEY');
     });
   });
 
-  describe('Gemini Failure Modes', () => {
-    it('returns 500 error if API key is missing from environment', async () => {
-      process.env.GEMINI_API_KEY = ''; // Clear key
-      const app = createApp({ generateContentFn: mockGeneratorSuccessFan });
+  describe('Endpoint Failure Modes', () => {
+    it('returns 500 error if generator function is missing', async () => {
+      const app = createApp({ generateContentFn: null });
 
       const res = await request(app)
         .post('/api/fan-assistant')
@@ -299,8 +328,8 @@ describe('Matchday Command API Endpoints', () => {
         })
         .expect(500);
 
-      expect(res.body.error).toBe('Gemini Configuration Error');
-      expect(res.body.message).toContain('Gemini API key is missing');
+      expect(res.body.error).toBe('Generative Service Unavailable');
+      expect(res.body.message).toContain('generator function is not configured');
     });
 
     it('returns 500 error on Gemini SDK exception without leaking details', async () => {

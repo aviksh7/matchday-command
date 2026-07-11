@@ -4,11 +4,14 @@ This document explains the security architecture of **Matchday Command**, addres
 
 ---
 
-## 1. API Key & Secret Management
+## 1. Cloud Authentication & API Access
 
-- **Zero Client-Side Secrets:** No Google Gemini API keys, Firebase configuration parameters, or development secrets are hardcoded in the frontend React application.
-- **Server-Side Mediation:** To prevent exposure and abuse, the Gemini API is accessed *strictly server-side* within a protected Google Cloud Run microservice environment.
-- **Secret Manager Integration:** The Google Secret Manager secret version containing the Gemini API key is mapped directly to the `GEMINI_API_KEY` environment variable of the Google Cloud Run container at runtime. This keeps the secret strictly server-side, preventing it from appearing in any client bundles, source code, build pipelines, or container logs.
+- **Zero Client-Side Secrets:** No Google Gemini API keys, Google Cloud credentials, or development secrets are exposed or hardcoded in the frontend React application.
+- **Server-Side Mediation:** The backend API is hosted in a protected Google Cloud Run microservice environment.
+- **Vertex AI IAM Authentication:** In production, the Cloud Run backend uses Application Default Credentials (ADC) to authenticate with the Vertex AI API. No static API keys or Secret Manager secrets are required or delivered to the container.
+- **Least Privilege Service Account:** The Cloud Run service runs under a dedicated service account identity:
+  `matchday-command-api@matchday-command-2026.iam.gserviceaccount.com`
+  which has been granted the `roles/aiplatform.user` IAM role. The old `GEMINI_API_KEY` Secret Manager secret is no longer used by this service and will be permanently deleted after validation of the Vertex AI deployment.
 
 ---
 
