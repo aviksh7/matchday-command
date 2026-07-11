@@ -3,6 +3,9 @@ node_modules
 /dist
 /dist-ssr
 *.local
+.env
+.env.*
+server/.env
 
 # Logs
 logs
@@ -33,3 +36,7 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Keep safe environment templates tracked
+!.env.example
+!**/.env.example

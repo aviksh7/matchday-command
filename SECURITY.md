@@ -8,7 +8,7 @@ This document explains the security architecture of **Matchday Command**, addres
 
 - **Zero Client-Side Secrets:** No Google Gemini API keys, Firebase configuration parameters, or development secrets are hardcoded in the frontend React application.
 - **Server-Side Mediation:** To prevent exposure and abuse, the Gemini API is accessed *strictly server-side* within a protected Google Cloud Run microservice environment.
-- **Secret Manager Integration:** API keys are stored and injected via Google Cloud Secret Manager at runtime, adhering to the principle of least privilege.
+- **Secret Manager Integration:** The Google Secret Manager secret version containing the Gemini API key is mapped directly to the `GEMINI_API_KEY` environment variable of the Google Cloud Run container at runtime. This keeps the secret strictly server-side, preventing it from appearing in any client bundles, source code, build pipelines, or container logs.
 
 ---
 
@@ -17,6 +17,7 @@ This document explains the security architecture of **Matchday Command**, addres
 - **No Auth / No Database for MVP:** To reduce attack surface and keep the codebase lightweight under the 10 MB limit, this prototype uses local, read-only simulated venue data.
 - **Data Privacy:** Because there are no database reads/writes and no user login portals, user metadata is never captured, stored, or transmitted.
 - **Simulated Context:** All maps, incidents, routes, and queue data are simulated prototype representations. No real-world fan names, PII (Personally Identifiable Information), or emergency dispatch vectors are integrated.
+- **Abuse & Rate Limiting:** A lightweight, in-memory rate limiter is configured per-container instance. This provides basic request rate throttling for development and cost control, but does not use a distributed store (e.g. Redis) and is limited to per-instance container memory.
 
 ---
 

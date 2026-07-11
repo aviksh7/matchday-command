@@ -16,6 +16,18 @@ Runs the test suite once (non-interactive):
 npm run test
 ```
 
+#### Run Backend API Tests
+Runs the backend API tests in the isolated `server/` directory:
+```bash
+npm run test:server
+```
+
+#### Run All Tests (Frontend and Backend)
+Runs the complete frontend unit/integration test suite along with the backend API test suite:
+```bash
+npm run test:all
+```
+
 #### Perform Production Compile Check
 Runs the TypeScript type-checker (`tsc`) and Vite bundler to verify zero syntax, type, or asset compile errors:
 ```bash
