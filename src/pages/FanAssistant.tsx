@@ -3,12 +3,16 @@ import { SIMULATED_VENUES } from '../data/mockData';
 import { getSimulatedAssistantResponse } from '../logic/fanAssistant';
 import type { AssistantPromptKey } from '../logic/fanAssistant';
 import type { AssistantResponse } from '../types';
+import { postFanAssistant } from '../logic/apiClient';
+import type { ResponseSource } from '../logic/apiClient';
 
 interface Message {
   id: string;
   sender: 'user' | 'assistant';
   text?: string;
   responseData?: AssistantResponse;
+  source?: ResponseSource;
+  fallbackReasonText?: string;
   timestamp: string;
 }
 
@@ -16,75 +20,141 @@ export const FanAssistant: React.FC = () => {
   const [selectedVenueId, setSelectedVenueId] = useState<string>(SIMULATED_VENUES[0].id);
   const [chatHistory, setChatHistory] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   
   const selectedVenue = SIMULATED_VENUES.find(v => v.id === selectedVenueId) || SIMULATED_VENUES[0];
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const activeRequestRef = useRef<AbortController | null>(null);
+  const currentVenueIdRef = useRef<string>(selectedVenueId);
 
-  // Initialize chat with a greeting when active venue changes
+  // Initialize chat with a greeting when active venue changes and abort any active request
   useEffect(() => {
+    if (activeRequestRef.current) {
+      activeRequestRef.current.abort();
+      activeRequestRef.current = null;
+    }
+    setIsLoading(false);
+    currentVenueIdRef.current = selectedVenueId;
+
     const greeting: Message = {
       id: 'greeting',
       sender: 'assistant',
-      text: `Hello! I am the Matchday Fan Assistant prototype for the **${selectedVenue.name}** console.
-
-Click one of the quick action prompts below or enter a custom question to see simulated stadium operations guidance. Note: This interface is Gemini-ready and is planned for server-side Generative AI integration in a future milestone.`,
+      text: `Hello! I am the Matchday Fan Assistant prototype for the **${selectedVenue.name}** console.\n\nClick one of the quick action prompts below or enter a custom question to see simulated stadium operations guidance. Note: Guidance is generated via Vertex AI on Cloud Run when available, with deterministic local simulation as the offline or error fallback.`,
       timestamp: getCurrentTimestamp()
     };
     setChatHistory([greeting]);
-  }, [selectedVenueId]);
+  }, [selectedVenueId, selectedVenue.name]);
+
+  // Clean up any pending request on unmount
+  useEffect(() => {
+    return () => {
+      if (activeRequestRef.current) {
+        activeRequestRef.current.abort();
+      }
+    };
+  }, []);
 
   // Scroll chat to bottom on new messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatHistory]);
+  }, [chatHistory, isLoading]);
 
   const getCurrentTimestamp = () => {
     const now = new Date();
     return now.toTimeString().split(' ')[0].substring(0, 5);
   };
 
-  const handlePromptClick = (key: AssistantPromptKey, label: string) => {
+  const executeFanQuery = async (queryText: string, promptKey: AssistantPromptKey | 'custom') => {
+    if (isLoading) return;
+
+    if (activeRequestRef.current) {
+      activeRequestRef.current.abort();
+    }
+    const controller = new AbortController();
+    activeRequestRef.current = controller;
+    const requestVenueId = selectedVenue.id;
+
     const userMsg: Message = {
       id: `user-${Date.now()}`,
       sender: 'user',
-      text: label,
+      text: queryText,
       timestamp: getCurrentTimestamp()
     };
 
-    const responseData = getSimulatedAssistantResponse(key, null, selectedVenue);
+    setChatHistory(prev => [...prev, userMsg]);
+    setIsLoading(true);
 
-    const assistantMsg: Message = {
-      id: `assistant-${Date.now()}`,
-      sender: 'assistant',
-      responseData,
-      timestamp: getCurrentTimestamp()
-    };
+    try {
+      const result = await postFanAssistant(queryText, selectedVenue, controller.signal);
 
-    setChatHistory(prev => [...prev, userMsg, assistantMsg]);
+      // If venue changed while fetching or controller aborted by unmount/venue switch, ignore stale result
+      if (controller.signal.aborted || currentVenueIdRef.current !== requestVenueId) {
+        return;
+      }
+
+      if (result.success) {
+        const responseData: AssistantResponse = {
+          answer: result.data.summary,
+          action: result.data.recommendedAction,
+          telemetryUsed: result.data.simulatedDataUsed.join(', '),
+          disclaimer: result.data.limitations
+        };
+        const assistantMsg: Message = {
+          id: `assistant-${Date.now()}`,
+          sender: 'assistant',
+          responseData,
+          source: result.source,
+          timestamp: getCurrentTimestamp()
+        };
+        setChatHistory(prev => [...prev, assistantMsg]);
+      } else {
+        const fallbackResponse = getSimulatedAssistantResponse(promptKey, queryText, selectedVenue);
+        const fallbackReasonText = result.message || 'Switched to local deterministic fallback due to network or server error.';
+
+        const assistantMsg: Message = {
+          id: `assistant-${Date.now()}`,
+          sender: 'assistant',
+          responseData: fallbackResponse,
+          source: result.source,
+          fallbackReasonText,
+          timestamp: getCurrentTimestamp()
+        };
+        setChatHistory(prev => [...prev, assistantMsg]);
+      }
+    } catch (err) {
+      if (controller.signal.aborted || currentVenueIdRef.current !== requestVenueId) {
+        return;
+      }
+      const fallbackResponse = getSimulatedAssistantResponse(promptKey, queryText, selectedVenue);
+      const assistantMsg: Message = {
+        id: `assistant-${Date.now()}`,
+        sender: 'assistant',
+        responseData: fallbackResponse,
+        source: 'Local deterministic fallback',
+        fallbackReasonText: 'Network connection failure. Switched to local deterministic fallback.',
+        timestamp: getCurrentTimestamp()
+      };
+      setChatHistory(prev => [...prev, assistantMsg]);
+    } finally {
+      if (activeRequestRef.current === controller) {
+        setIsLoading(false);
+        activeRequestRef.current = null;
+      }
+    }
+  };
+
+  const handlePromptClick = (key: AssistantPromptKey, label: string) => {
+    if (isLoading) return;
+    executeFanQuery(label, key);
   };
 
   const handleCustomSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || isLoading) return;
 
-    const userMsg: Message = {
-      id: `user-${Date.now()}`,
-      sender: 'user',
-      text: inputValue.trim(),
-      timestamp: getCurrentTimestamp()
-    };
-
-    const responseData = getSimulatedAssistantResponse('custom', inputValue.trim(), selectedVenue);
-
-    const assistantMsg: Message = {
-      id: `assistant-${Date.now()}`,
-      sender: 'assistant',
-      responseData,
-      timestamp: getCurrentTimestamp()
-    };
-
-    setChatHistory(prev => [...prev, userMsg, assistantMsg]);
+    const queryText = inputValue.trim();
     setInputValue('');
+    executeFanQuery(queryText, 'custom');
   };
 
   return (
@@ -98,6 +168,7 @@ Click one of the quick action prompts below or enter a custom question to see si
               id="assistant-venue-select" 
               value={selectedVenueId} 
               onChange={(e) => setSelectedVenueId(e.target.value)}
+              disabled={isLoading}
               style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.95rem' }}
             >
               {SIMULATED_VENUES.map(venue => (
@@ -120,7 +191,7 @@ Click one of the quick action prompts below or enter a custom question to see si
           <div style={{ padding: '1rem 1.5rem', background: '#f8fafc', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>Fan Operations Assistant</h3>
-              <span style={{ fontSize: '0.75rem', color: 'var(--primary-color)', fontWeight: 'bold' }}>⚡ LOCAL SIMULATED PROTOTYPE (GEMINI INTEGRATION PLANNED)</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--primary-color)', fontWeight: 'bold' }}>⚡ Vertex AI Hybrid Assistant (Cloud Run / Local Fallback)</span>
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Console: <strong>{selectedVenue.name}</strong></div>
           </div>
@@ -154,6 +225,28 @@ Click one of the quick action prompts below or enter a custom question to see si
                     ) : msg.responseData ? (
                       /* Structured Telemetry Response Card */
                       <div style={{ background: '#ffffff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 2px 5px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: '600px' }}>
+                        {msg.source && (
+                          <div style={{
+                            display: 'inline-block',
+                            alignSelf: 'flex-start',
+                            padding: '0.25rem 0.6rem',
+                            borderRadius: '12px',
+                            fontSize: '0.7rem',
+                            fontWeight: 'bold',
+                            background: msg.source === 'Vertex AI via Cloud Run' ? '#e0f2fe' : '#fef3c7',
+                            color: msg.source === 'Vertex AI via Cloud Run' ? '#0369a1' : '#92400e',
+                            border: `1px solid ${msg.source === 'Vertex AI via Cloud Run' ? '#bae6fd' : '#fde68a'}`
+                          }}>
+                            {msg.source === 'Vertex AI via Cloud Run' ? '☁️ Vertex AI via Cloud Run' : '⚙️ Local deterministic fallback'}
+                          </div>
+                        )}
+
+                        {msg.fallbackReasonText && (
+                          <div style={{ fontSize: '0.75rem', color: '#b45309', fontStyle: 'italic' }}>
+                            ℹ️ {msg.fallbackReasonText}
+                          </div>
+                        )}
+
                         <div>
                           <strong style={{ display: 'block', fontSize: '0.75rem', color: 'var(--primary-color)', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Assistant Answer</strong>
                           <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-color)', fontWeight: 500 }}>{msg.responseData.answer}</p>
@@ -179,38 +272,46 @@ Click one of the quick action prompts below or enter a custom question to see si
                 <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.25rem', padding: '0 0.5rem' }}>{msg.timestamp}</span>
               </div>
             ))}
+            {isLoading && (
+              <div style={{ alignSelf: 'flex-start', padding: '0.75rem 1.25rem', background: '#f1f5f9', borderRadius: '18px', fontSize: '0.9rem', color: '#64748b', fontStyle: 'italic' }}>
+                <span role="status" aria-live="polite">⏳ Generating guidance via Vertex AI...</span>
+              </div>
+            )}
             <div ref={chatEndRef} />
           </div>
 
           {/* Form Input Area */}
           <form onSubmit={handleCustomSubmit} style={{ padding: '1rem 1.5rem', background: '#ffffff', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.75rem' }}>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
+              disabled={isLoading}
               placeholder="Ask about gates, concession wait times, transit, accessibility, or sustainability..."
-              style={{ 
-                flex: 1, 
-                padding: '0.75rem 1rem', 
-                border: '1px solid #cbd5e1', 
-                borderRadius: '6px', 
-                fontSize: '0.95rem'
+              style={{
+                flex: 1,
+                padding: '0.75rem 1rem',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                fontSize: '0.95rem',
+                opacity: isLoading ? 0.6 : 1
               }}
             />
-            <button 
-              type="submit" 
-              style={{ 
-                background: 'var(--primary-color)', 
-                color: 'white', 
-                border: 'none', 
-                padding: '0.75rem 1.5rem', 
-                borderRadius: '6px', 
-                fontSize: '0.95rem', 
-                fontWeight: 'bold', 
-                cursor: 'pointer' 
+            <button
+              type="submit"
+              disabled={isLoading}
+              style={{
+                background: isLoading ? '#94a3b8' : 'var(--primary-color)',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '6px',
+                fontSize: '0.95rem',
+                fontWeight: 'bold',
+                cursor: isLoading ? 'not-allowed' : 'pointer'
               }}
             >
-              Send
+              {isLoading ? 'Sending...' : 'Send'}
             </button>
           </form>
 
@@ -224,37 +325,43 @@ Click one of the quick action prompts below or enter a custom question to see si
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
               <button 
                 onClick={() => handlePromptClick('least-crowded-gate', 'Find the least crowded gate')}
-                style={{ textAlign: 'left', padding: '0.6rem 0.85rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
+                disabled={isLoading}
+                style={{ textAlign: 'left', padding: '0.6rem 0.85rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: isLoading ? 'not-allowed' : 'pointer', fontSize: '0.85rem', fontWeight: 600, opacity: isLoading ? 0.6 : 1 }}
               >
                 🔍 Find the least crowded gate
               </button>
               <button 
                 onClick={() => handlePromptClick('low-wait-concessions', 'Find lower-wait restroom/concession area')}
-                style={{ textAlign: 'left', padding: '0.6rem 0.85rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
+                disabled={isLoading}
+                style={{ textAlign: 'left', padding: '0.6rem 0.85rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: isLoading ? 'not-allowed' : 'pointer', fontSize: '0.85rem', fontWeight: 600, opacity: isLoading ? 0.6 : 1 }}
               >
                 🍔 Find lowest queue concession
               </button>
               <button 
                 onClick={() => handlePromptClick('accessible-guidance', 'Get accessible route guidance')}
-                style={{ textAlign: 'left', padding: '0.6rem 0.85rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
+                disabled={isLoading}
+                style={{ textAlign: 'left', padding: '0.6rem 0.85rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: isLoading ? 'not-allowed' : 'pointer', fontSize: '0.85rem', fontWeight: 600, opacity: isLoading ? 0.6 : 1 }}
               >
                 ♿ Get accessibility guidance
               </button>
               <button 
                 onClick={() => handlePromptClick('transit-pressures', 'Get post-match transit guidance')}
-                style={{ textAlign: 'left', padding: '0.6rem 0.85rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
+                disabled={isLoading}
+                style={{ textAlign: 'left', padding: '0.6rem 0.85rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: isLoading ? 'not-allowed' : 'pointer', fontSize: '0.85rem', fontWeight: 600, opacity: isLoading ? 0.6 : 1 }}
               >
                 🚆 Get transit pressures status
               </button>
               <button 
                 onClick={() => handlePromptClick('sustainability-tips', 'Get sustainability tip')}
-                style={{ textAlign: 'left', padding: '0.6rem 0.85rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
+                disabled={isLoading}
+                style={{ textAlign: 'left', padding: '0.6rem 0.85rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: isLoading ? 'not-allowed' : 'pointer', fontSize: '0.85rem', fontWeight: 600, opacity: isLoading ? 0.6 : 1 }}
               >
                 🌱 Get sustainability tips
               </button>
               <button 
                 onClick={() => handlePromptClick('translate-announcement', 'Translate announcement placeholder')}
-                style={{ textAlign: 'left', padding: '0.6rem 0.85rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
+                disabled={isLoading}
+                style={{ textAlign: 'left', padding: '0.6rem 0.85rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: isLoading ? 'not-allowed' : 'pointer', fontSize: '0.85rem', fontWeight: 600, opacity: isLoading ? 0.6 : 1 }}
               >
                 📢 Translate PA announcements
               </button>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import IncidentSupport from '../pages/IncidentSupport';
 
 describe('Incident Support UI Dashboard Component', () => {
@@ -17,7 +17,7 @@ describe('Incident Support UI Dashboard Component', () => {
     expect(disclaimer.textContent).toContain('does not access external FIFA');
   });
 
-  it('supports selecting an incident and showing the decision support details', () => {
+  it('supports selecting an incident and showing the decision support details', async () => {
     render(<IncidentSupport />);
 
     // Click on a row inside the incident queue
@@ -25,13 +25,18 @@ describe('Incident Support UI Dashboard Component', () => {
     expect(incidentRowId).toBeInTheDocument();
     fireEvent.click(incidentRowId);
 
+    // Wait for async API or fallback response to settle and loading state to clear
+    await waitFor(() => {
+      expect(screen.queryByText(/Generating Vertex AI guidance via Cloud Run/i)).not.toBeInTheDocument();
+    });
+
     // Verify detail panel headers render
     expect(screen.getByRole('heading', { level: 3, name: /Decision Support Detail: INC-201/i })).toBeInTheDocument();
     expect(screen.getAllByText(/Active incident INC-201/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/staff briefing/i).length).toBeGreaterThan(0);
   });
 
-  it('supports local scenario builder to create a custom plan', () => {
+  it('supports local scenario builder to create a custom plan', async () => {
     render(<IncidentSupport />);
 
     // Scenario builder form inputs
@@ -52,6 +57,11 @@ describe('Incident Support UI Dashboard Component', () => {
 
     // Submit scenario
     fireEvent.click(submitButton);
+
+    // Wait for async API or fallback response to settle and loading state to clear
+    await waitFor(() => {
+      expect(screen.queryByText(/Generating Vertex AI guidance via Cloud Run/i)).not.toBeInTheDocument();
+    });
 
     // Verify mock incident ID SCEN-MOCK is selected and detailed in decision support panel
     expect(screen.getByRole('heading', { level: 3, name: /Decision Support Detail: SCEN-MOCK/i })).toBeInTheDocument();

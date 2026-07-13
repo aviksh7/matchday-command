@@ -152,7 +152,7 @@ export const getSimulatedAssistantResponse = (
         answer: `Simulated Multilingual Translation Placeholder for PA announcement ("${sampleAnnouncement}"):
 • Spanish: "Atención aficionados, por favor no corran en las rampas del corredor. Procedan despacio y cedan el paso a los carriles de sillas de ruedas."
 • French: "Attention aux supporters, veuillez ne pas courir sur les rampes du hall. Procédez lentement et cédez le passage aux voies pour fauteuils roulants."`,
-        action: `This is a prototype translation placeholder. In a future update, this action will be powered by the server-side Gemini API on Google Cloud Run to translate sample announcement text.`,
+        action: `This is a prototype translation placeholder. When connected to the network, this action is processed by the server-side Vertex AI API on Google Cloud Run to translate sample announcement text, with deterministic local simulation as the offline fallback.`,
         telemetryUsed: `Static PA announcement template template_01.`,
         disclaimer: `Simulated translation placeholder. Does not guarantee real translation accuracy or connect to public address systems.`
       };
@@ -163,7 +163,7 @@ export const getSimulatedAssistantResponse = (
       return {
         answer: `I received your query: "${escapedQuery || '...'}"
  
-This simulated prototype assistant is Gemini-ready. Natural language processing and context-aware prototype guidance will be powered by the Gemini API server-side on Google Cloud Run in a future milestone.`,
+Natural language processing and context-aware guidance are processed by Vertex AI via Cloud Run when available, with deterministic local simulation as the offline or error fallback.`,
         action: `Try clicking one of the quick action buttons above, or search for keywords like "gates", "restrooms", "transit", "wheelchair", or "eco" to test the simulated telemetry grounding engine.`,
         telemetryUsed: `None (Keyword fallback trigger).`,
         disclaimer: `Simulated prototype response.`
