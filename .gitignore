@@ -40,3 +40,6 @@ Thumbs.db
 # Keep safe environment templates tracked
 !.env.example
 !**/.env.example
+
+# Firebase CLI local cache
+.firebase/
