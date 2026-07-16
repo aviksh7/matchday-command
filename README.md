@@ -15,7 +15,7 @@ Large tournament match days concentrate fan movement, accessibility needs, queue
 Matchday Command is a working prototype that presents one **selected simulated venue snapshot** through two perspectives:
 
 - **Fan Mode** offers grounded guidance about lower-pressure gates, lower-wait services, accessibility-ready entrances, simulated transit pressure/status, sustainability tips, and a limited translation demonstration.
-- **Operations Mode** presents simulated gate loads, crowd density, volunteer coverage, accessibility requests, incident queues, local recommendations, and structured response-planning drafts.
+- **Operations Mode** presents simulated gate loads, crowd density, service-queue pressure, volunteer coverage, accessibility requests, incident queues, local recommendations, and structured response-planning drafts.
 
 The product combines deterministic local logic with two server-side Vertex AI flows. Every generated result identifies whether it came from **Vertex AI via Cloud Run** or the **local deterministic fallback**, and both paths retain simulation and limitation notices.
 
@@ -48,13 +48,13 @@ Incident recommendations, briefings, and announcement text are prototype drafts 
 | --- | --- | --- | --- |
 | Navigation and fan guidance | Interactive schematic stadium map plus deterministic gate, queue, and movement guidance for the selected venue snapshot. | Not GPS, geographically accurate, or turn-by-turn routing. | `src/pages/CrowdMap.tsx`, `src/components/StadiumMap.tsx`, `src/logic/crowdMap.ts`; `src/test/crowdMap*.test.*` |
 | Crowd management | Gate pressure, zone occupancy, volunteer coverage, and priority calculations from local simulated telemetry. | Snapshot data only; no continuously updating sensors or venue feed. | `src/pages/StaffCommand.tsx`, `src/logic/staffCommand.ts`, `src/logic/operations.ts`; staff and operations tests |
-| Accessibility | Accessibility-ready gate indicators, schematic accessible route, support-request summaries, and accessibility-aware guidance. | Not a verified physical venue route or guarantee of real-world accessibility. | `src/components/StadiumMap.tsx`, `src/logic/fanAssistant.ts`, `src/logic/incidentSupport.ts`; map keyboard and assistant tests |
+| Accessibility | Accessibility-ready gate indicators, schematic accessible route, support-request summaries, and accessibility-aware guidance. Compact AI context includes request type/location/status and zone volunteer counts, but omits internal request IDs and timestamps. | Not a verified physical venue route or guarantee of real-world accessibility. | `src/components/StadiumMap.tsx`, `src/logic/apiClient.ts`, `src/logic/fanAssistant.ts`, `src/logic/incidentSupport.ts`; API-client, map-keyboard, and assistant tests |
 | Transportation | Simulated transit-node pressure/status comparisons and egress cautions. | No timetables, fares, GPS, municipal feeds, or arrival estimates. | `src/data/mockData.ts`, `src/logic/fanAssistant.ts`, `src/logic/crowdMap.ts`; fan and crowd-map tests |
 | Sustainability | Simulated refill, waste-sorting, and green-transit indicators with deterministic tips. | Demonstration metrics only; no measured environmental impact or facility feed. | `src/data/mockData.ts`, Fan Assistant and Staff Command; `src/test/fanAssistant.test.ts` |
-| Multilingual support | A limited translation demonstration; the local fallback contains a fixed Spanish/French sample announcement. | The UI is English and language coverage or translation accuracy is not guaranteed. | `src/pages/FanAssistant.tsx`, `src/logic/fanAssistant.ts`; fan assistant tests |
-| Operational intelligence | Venue overview, gate loads, dense zones, coverage gaps, accessibility requests, and prioritized operational items. | Local prototype data; incident status edits exist only in browser memory. | `src/pages/StaffCommand.tsx`, `src/logic/staffCommand.ts`; staff command tests |
-| Incident response | Existing incident selection, local scenario creation, local status updates, risk context, and response-planning drafts. | No dispatch, persistence, public-address connection, or emergency integration. | `src/pages/IncidentSupport.tsx`, `src/logic/incidentSupport.ts`; incident UI and logic tests |
-| Decision support | Structured actions, briefings, announcement drafts, accessibility notes, and crowd/transit notes. | Drafts require human review and do not replace trained security, medical, or venue personnel. | Incident schema in `server/app.js`; frontend and backend incident tests |
+| Multilingual support | A shared simulated venue announcement drives a limited translation demonstration; the deterministic fallback supplies only a fixed Spanish/French sample. | The UI is English, the fallback cannot translate other text or languages, and language coverage or translation accuracy is not guaranteed. | `src/pages/FanAssistant.tsx`, `src/logic/fanAssistant.ts`; fan assistant and backend prompt tests |
+| Operational intelligence | Venue overview, gate loads, dense zones, coverage gaps, accessibility requests, prioritized operational items, and a `Simulated Service Queue Pressure` panel derived from local concession/restroom waits. | Local snapshot data only; no queue sensors or live service feed, and incident status edits exist only in browser memory. | `src/pages/StaffCommand.tsx`, `src/components/StaffServiceQueuePressure.tsx`, `src/logic/staffCommand.ts`; staff command tests |
+| Incident response | Existing incident selection, local scenario creation, local status updates, risk context, and response-planning drafts with visible source and limitation sections. | No dispatch, persistence, public-address connection, emergency integration, or operational authority. | `src/pages/IncidentSupport.tsx`, `src/components/IncidentDecisionSupportPanel.tsx`, `src/logic/incidentSupport.ts`; incident UI and logic tests |
+| Decision support | Structured recommended actions, volunteer briefings, fan-announcement drafts, accessibility notes, and crowd/transit notes. | Every output is a prototype draft requiring qualified human review; it neither dispatches staff nor publishes announcements and does not replace trained security, medical, or venue personnel. | Incident schema in `server/app.js`; frontend and backend incident tests |
 | GenAI usage | Fan Assistant and Incident Support use Vertex AI through Cloud Run with structured output and visible source labels. | Cloud availability is not guaranteed; failures and invalid output use local deterministic logic. | `src/logic/apiClient.ts`, `server/client.js`, `server/index.js`, `server/app.js`; API client and backend tests |
 | Simulated-data honesty | Persistent global notice, page warnings, output limitations, prompt-grounding rules, and source labels. | No official operational information is available anywhere in the prototype. | `src/components/AppShell.tsx`, page notices, server instructions; App, data, fan, incident, and staff tests |
 
@@ -76,7 +76,7 @@ These measures do not constitute a formal WCAG certification or guarantee compat
 
 ## Testing and quality gates
 
-Milestone 1B began from a verified checkpoint of **74 frontend tests and 18 backend tests (92 total)**. Project Details coverage is added during this documentation milestone; [TESTING.md](TESTING.md) records the latest verified post-implementation count.
+The Attempt 2 submission candidate passes **103 frontend tests and 19 backend tests (122 total)**. Attempt 2 began at 80 frontend and 18 backend tests (98 total); [TESTING.md](TESTING.md) records both verified checkpoints and the covered behaviors.
 
 The repository enforces:
 
@@ -84,7 +84,7 @@ The repository enforces:
 - strict TypeScript for the frontend and Vite configuration
 - Oxlint with warnings denied
 - frontend Vitest and React Testing Library tests
-- backend Vitest and Supertest tests with the Google AI client completely mocked
+- backend Vitest and Supertest tests with the Vertex AI client completely mocked
 - `npm run check` in Firebase Hosting merge and pull-request workflows
 
 Automated tests do not call Firebase Hosting, Cloud Run, Vertex AI, or other external cloud services.
@@ -133,7 +133,7 @@ npm run check
 
 The frontend is built into `dist/` and served by Firebase Hosting. `firebase.json` keeps the `/api/**` Cloud Run rewrite before the single-page-app fallback. The Node.js API is deployed separately to Cloud Run with `GOOGLE_CLOUD_PROJECT` and location supplied by deployment configuration, and it uses its attached runtime identity for Vertex AI access. The Hosting workflows run the full repository quality gate before live or preview deployment.
 
-No deployment is performed as part of Milestone 1B.
+No deployment is performed as part of this local Attempt 2 verification contract.
 
 ## Assumptions and limitations
 
@@ -142,6 +142,6 @@ No deployment is performed as part of Milestone 1B.
 - The map is schematic and not geographically accurate.
 - Transportation content is simulated pressure/status information, not travel planning or departure data.
 - Multilingual support is a limited demonstration, not comprehensive localization.
-- Operational and announcement outputs are drafts requiring human review.
+- Operational and announcement outputs are drafts requiring qualified human review; they do not dispatch staff or publish announcements.
 - There is no user account, database, query history, persistent incident state, notification system, dispatch integration, or external operational connection.
 - Matchday Command is an independent prototype and is not affiliated with FIFA, tournament organizers, stadiums, transit agencies, municipalities, or emergency services.

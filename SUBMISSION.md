@@ -25,8 +25,8 @@ The full architecture, challenge mapping, evidence, setup, and limitations are m
 - All venue, crowd, incident, route, transit-pressure, and wait-time information is simulated.
 - The selected venue is a snapshot, not a continuously updating operational feed.
 - The map is schematic; transportation content is pressure/status information rather than travel or departure information.
-- Multilingual support is a limited demonstration and is not guaranteed translation coverage.
-- Operational recommendations, volunteer briefings, and announcement text are drafts requiring human review.
+- Multilingual support is a limited demonstration; language coverage and translation accuracy are not guaranteed.
+- Operational recommendations, volunteer briefings, and announcement text are drafts requiring qualified human review; they do not dispatch staff or publish announcements.
 - There is no user authentication, application database, persistent incident state, dispatch, notification, or external operational integration.
 - Users must not submit personal, confidential, medical, or emergency information to AI features.
 - Matchday Command is an independent prototype and is not affiliated with FIFA, tournament organizers, venue operators, transit agencies, municipalities, or emergency services.
@@ -37,8 +37,8 @@ The full architecture, challenge mapping, evidence, setup, and limitations are m
 2. Select a venue on Home and open its Crowd Map.
 3. Select map features with a pointer and keyboard; use Escape to clear.
 4. Run a Fan Assistant prompt and inspect the source and limitations labels.
-5. Review Staff Command as a selected simulated venue snapshot.
-6. Select an Incident Support item and inspect the structured draft and source label.
+5. Review Staff Command as a selected simulated venue snapshot, including the locally derived service-queue pressure panel.
+6. Select an Incident Support item and inspect the structured draft, source label, and visible limitations.
 7. Open Project Details for the concise product, architecture, resilience, design, evidence, and limitation summary.
 
 Automated verification instructions and the latest test inventory are in [TESTING.md](TESTING.md). Security and privacy details are in [SECURITY.md](SECURITY.md).

@@ -4,25 +4,25 @@ This document records the automated and manual verification workflow for Matchda
 
 ## Verified inventory
 
-Milestone 1B began from the verified checkpoint below:
+Attempt 2 began from the verified checkpoint below:
 
 | Suite | Test files | Tests |
 | --- | ---: | ---: |
-| Frontend | 14 | 74 |
+| Frontend | 16 | 80 |
 | Backend | 1 | 18 |
-| **Checkpoint total** | **15** | **92** |
+| **Checkpoint total** | **17** | **98** |
 
-Dedicated Project Details coverage was added during Milestone 1B. The table below records the post-implementation `npm run check` result rather than treating 92 as a permanent count.
+The table below records the verified Attempt 2 submission-candidate result.
 
-Post-implementation Milestone 1B verification:
+Submission-candidate verification:
 
 | Suite | Test files | Tests |
 | --- | ---: | ---: |
-| Frontend | 15 | 77 |
-| Backend | 1 | 18 |
-| **Current verified total** | **16** | **95** |
+| Frontend | 16 | 103 |
+| Backend | 1 | 19 |
+| **Current verified total** | **17** | **122** |
 
-The final submission pass will re-run the suites and update these counts if later approved work changes them.
+These tests run locally with cloud clients mocked; they are not evidence of a production-system call.
 
 ## Commands
 
@@ -39,7 +39,7 @@ npm run check       # lint, build, and all tests
 
 - application navigation and persistent simulation messaging;
 - simulated venue-data invariants;
-- gate pressure, crowd density, accessibility, staffing, and priority calculations;
+- gate pressure, crowd density, service-queue pressure, accessibility, staffing, volunteer grounding, and priority calculations;
 - pointer and keyboard stadium-map interaction, including Enter, Space, and Escape;
 - deterministic Fan Assistant and Incident Support outputs and safety language;
 - cloud-success, timeout/network/server failure, malformed response, invalid schema, loading, disabled-state, and stale-request paths;
@@ -71,8 +71,8 @@ Use the public application at <https://matchday-command-2026.web.app>:
 2. Select a venue on Home, open Crowd Map, and confirm the selected snapshot carries through.
 3. On Crowd Map, Tab to a feature, select with Enter and Space, and clear with Escape.
 4. In Fan Assistant, submit a quick prompt and confirm the result shows a source label plus a simulation/limitation notice.
-5. Review Staff Command gate, crowd, transit-pressure, sustainability, accessibility, and incident panels as simulated snapshot information.
-6. In Incident Support, select an incident and confirm the output is labeled as Vertex AI or local fallback and described as a draft.
+5. Review Staff Command gate, crowd, service-queue, transit-pressure, sustainability, accessibility, and incident panels as simulated snapshot information.
+6. In Incident Support, select an incident and confirm the output is labeled as Vertex AI or local fallback, described as a draft, and accompanied by visible limitations.
 7. Open Project Details and verify the product links, architecture flow, mode descriptions, Floodlit explanation, and limitations.
 8. Inspect Project Details at approximately 390 px, 768 px, and a standard laptop width; confirm readable headings, usable links, visible focus, and no horizontal page overflow.
 9. Confirm no page claims official access, continuously updating telemetry, real routing, transit departure information, automatic dispatch, or authorized announcements.

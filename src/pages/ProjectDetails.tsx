@@ -48,7 +48,7 @@ export const ProjectDetails: React.FC = () => {
             <div>
               <span>Fan Mode</span>
               <h4>Readable guidance for moving through the scenario.</h4>
-              <p>Explore simulated gate pressure, service waits, accessibility-ready entrances, transit pressure/status, sustainability tips, and a limited translation demonstration.</p>
+              <p>Explore simulated gate pressure, service waits, accessibility-ready entrances, transit pressure/status, sustainability tips, and a limited Spanish/French translation demonstration with no coverage or accuracy guarantee.</p>
             </div>
           </article>
           <article className="project-mode-card project-mode-card--ops">
@@ -56,7 +56,7 @@ export const ProjectDetails: React.FC = () => {
             <div>
               <span>Operations Mode</span>
               <h4>Prototype intelligence for reviewing venue pressure.</h4>
-              <p>Inspect simulated crowd, staffing, accessibility, and incident context, then review response-planning and announcement drafts that require human approval.</p>
+              <p>Inspect simulated crowd, locally derived service-queue pressure, volunteer, accessibility, and incident context, then review drafts that require qualified human approval.</p>
             </div>
           </article>
         </div>
@@ -79,7 +79,7 @@ export const ProjectDetails: React.FC = () => {
         <div className="project-ai-panel__intro">
           <FeedChip tone="green" icon="spark">Two implemented AI roles</FeedChip>
           <h3 id="project-ai-title">Structured guidance with a visible safety net.</h3>
-          <p>Cloud responses are grounded in the selected simulated context and must match a defined response structure.</p>
+          <p>Requests include compact selected simulated context, and cloud responses must match a defined response structure.</p>
         </div>
         <div className="project-ai-roles">
           <article>
@@ -90,7 +90,7 @@ export const ProjectDetails: React.FC = () => {
           <article>
             <span>02</span>
             <h4>Incident Support</h4>
-            <p>Structured decision-support, briefing, accessibility, crowd/transit, and announcement drafts.</p>
+            <p>Structured recommended actions, volunteer briefing, accessibility, crowd/transit, announcement draft, and visible limitations. Nothing is dispatched or published.</p>
           </article>
         </div>
         <div className="project-fallback-note">
@@ -121,7 +121,7 @@ export const ProjectDetails: React.FC = () => {
           <div><dt>Runtime</dt><dd>Node 22</dd></div>
           <div><dt>Types</dt><dd>Strict TypeScript</dd></div>
           <div><dt>Lint</dt><dd>Zero-warning Oxlint</dd></div>
-          <div><dt>Automated tests</dt><dd>95 verified</dd></div>
+          <div><dt>Automated tests</dt><dd>103 frontend / 19 backend / 122 total</dd></div>
         </dl>
       </section>
 
@@ -130,7 +130,7 @@ export const ProjectDetails: React.FC = () => {
         <div>
           <span>Prototype boundary</span>
           <h3 id="project-limitations-title">Clear limitations are part of the product.</h3>
-          <p>All venue, route, crowd, incident, transit, and wait-time information is simulated. The map is schematic; transportation is pressure/status information; multilingual support is a limited demonstration; outputs are drafts requiring human review. Do not submit personal, confidential, medical, or emergency information.</p>
+          <p>All venue, route, crowd, incident, transit, and wait-time information is simulated. The map is schematic; transportation is pressure/status information; language coverage and translation accuracy are not guaranteed; outputs are drafts requiring qualified human review and have no dispatch, publication, or operational authority. Do not submit personal, confidential, medical, or emergency information.</p>
           <p>Matchday Command is an independent prototype and is not affiliated with FIFA or venue operators.</p>
         </div>
       </aside>

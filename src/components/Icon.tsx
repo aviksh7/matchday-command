@@ -5,7 +5,6 @@ export type IconName =
   | 'arrow-right'
   | 'assistant'
   | 'bus'
-  | 'check'
   | 'cloud'
   | 'fallback'
   | 'incident'
@@ -32,7 +31,6 @@ const paths: Record<IconName, React.ReactNode> = {
   'arrow-right': <><path d="M5 12h14" /><path d="m14 7 5 5-5 5" /></>,
   assistant: <><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-5 4v-4.5A2.5 2.5 0 0 1 4 13.5Z" /><path d="M8 8.5h8M8 12h5" /></>,
   bus: <><rect x="5" y="3" width="14" height="15" rx="3" /><path d="M5 12h14M8 7h8M8 18v2M16 18v2" /><circle cx="8.5" cy="15" r="1" /><circle cx="15.5" cy="15" r="1" /></>,
-  check: <path d="m5 12.5 4 4L19 6.5" />,
   cloud: <path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.1 8.2 4.9 4.9 0 0 0 7 18Z" />,
   fallback: <><path d="M20 7v5h-5" /><path d="M18.6 16A8 8 0 1 1 20 10.5" /></>,
   incident: <><path d="M12 3 2.8 20h18.4Z" /><path d="M12 9v4.5M12 17h.01" /></>,

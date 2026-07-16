@@ -12,6 +12,9 @@ describe('Project Details product explanation', () => {
     expect(screen.getByRole('heading', { name: 'Operate on Night. Read on Paper.' })).toBeInTheDocument();
     expect(screen.getByText('Node 22')).toBeInTheDocument();
     expect(screen.getByText('Strict TypeScript')).toBeInTheDocument();
+    expect(screen.getByText('103 frontend / 19 backend / 122 total')).toBeInTheDocument();
+    expect(screen.getByText(/locally derived service-queue pressure/i)).toBeInTheDocument();
+    expect(screen.getByText(/no dispatch, publication, or operational authority/i)).toBeInTheDocument();
     expect(screen.getByText(/not affiliated with FIFA or venue operators/i)).toBeInTheDocument();
   });
 

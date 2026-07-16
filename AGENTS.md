@@ -11,13 +11,13 @@ Welcome, agent! You are working on **Matchday Command**. Follow these workspace 
   - **No official branding:** Do NOT use or reference official FIFA logos, emblems, mascots, trophies, or official brand assets.
   - **No live systems:** Do NOT connect to or claim access to real tournament databases, municipal transit APIs, or emergency services. All features must rely on local simulated crowd telemetry and venue status data.
   - **Simulated Data:** All maps, incidents, routes, wait times, gate pressures, and transit estimates must be clearly labeled as simulated mockup/prototype data.
-  - **No Frontend Secrets:** The Gemini API key must stay strictly server-side (Google Cloud Run env variables). No secrets in frontend code.
+  - **No Frontend Secrets:** Vertex AI authentication must stay strictly server-side through the Cloud Run service's attached identity and Application Default Credentials. No API keys or other secrets in frontend code.
 
 ---
 
 ## 2. Product Modes
-1. **Fan Mode:** Multilingual AI guidance, smart accessibility routing, sustainability tips, public transit estimates.
-2. **Staff/Ops Mode:** Live gate pressure telemetry, concession/bathroom wait times, incident dispatch queue, AI-generated action plans.
+1. **Fan Mode:** Limited multilingual AI guidance, simulated accessibility guidance, sustainability tips, and simulated transit pressure/status.
+2. **Staff/Ops Mode:** Simulated gate and service-queue pressure, accessibility and volunteer context, incident review, and AI-generated decision-support drafts.
 
 ---
 

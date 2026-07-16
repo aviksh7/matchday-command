@@ -4,7 +4,6 @@ import type { PageId } from './types';
 import AppShell from './components/AppShell';
 import { PageLoadBoundary, PageLoadingState } from './components/PageLoadBoundary';
 import { loadPageModule } from './logic/pageLoader';
-import './App.css';
 
 const CrowdMap = lazy(() => loadPageModule(import('./pages/CrowdMap')));
 const FanAssistant = lazy(() => loadPageModule(import('./pages/FanAssistant')));

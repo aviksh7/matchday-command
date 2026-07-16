@@ -16,11 +16,6 @@ export interface IncidentData {
   actionPlanText?: string;
 }
 
-// Keep Incident interface for compatibility
-export interface Incident extends IncidentData {
-  actionPlan?: string;
-}
-
 export interface GateData {
   id: string;
   name: string;
@@ -28,13 +23,6 @@ export interface GateData {
   percentage: number;
   isOpen: boolean;
   accessibleReady: boolean;
-}
-
-// Keep GatePressure interface for compatibility
-export interface GatePressure {
-  gate: string;
-  pressure: 'Low' | 'Medium' | 'High';
-  percentage: number;
 }
 
 export interface ZoneData {
@@ -105,4 +93,3 @@ export interface PriorityQueueItem {
   details: string;
   severity: 'Low' | 'Medium' | 'High';
 }
-

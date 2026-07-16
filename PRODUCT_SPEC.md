@@ -21,7 +21,7 @@ Fan guidance is not real routing, verified accessibility information, a transit 
 
 ### Operations Mode
 
-- Simulated gate pressure, crowd density, queue, volunteer coverage, accessibility-request, transit-pressure, and sustainability panels.
+- Simulated gate pressure, crowd density, locally derived service-queue pressure, volunteer coverage, accessibility-request, transit-pressure, and sustainability panels.
 - A locally calculated priority queue and deterministic recommendations.
 - A local incident list with in-memory status changes.
 - Existing-incident selection and a custom prototype scenario builder.
@@ -46,7 +46,7 @@ Operational actions, briefings, and announcement text are drafts requiring quali
 | Fan Assistant | Summary, recommended action, simulated data used, limitations | Deterministic response selected from the prompt category and current venue snapshot |
 | Incident Support | Situation summary, priority, actions, briefing, announcement draft, accessibility note, crowd/transit note, simulated data used, limitations | Deterministic incident summary and draft outputs grounded in the current local snapshot |
 
-Both paths preserve simulation wording. The UI identifies `Vertex AI via Cloud Run` or `Local deterministic fallback`.
+Both paths preserve simulation wording. The UI identifies `Vertex AI via Cloud Run` or `Local deterministic fallback`, and Incident Support renders the returned or local limitations alongside every draft.
 
 ## Data and state boundaries
 

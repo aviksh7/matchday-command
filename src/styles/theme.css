@@ -35,10 +35,6 @@
   --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-  --space-20: 5rem;
 
   --radius-sm: 0.35rem;
   --radius-md: 0.65rem;
@@ -49,27 +45,12 @@
   --border-night: 1px solid var(--night-700);
   --border-paper: 1px solid var(--paper-line);
   --shadow-raised: 0 18px 45px rgb(3 10 20 / 0.18);
-  --shadow-floodlight: 0 0 90px rgb(56 189 248 / 0.12);
 
   --motion-fast: 150ms;
   --motion-base: 220ms;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --content-max: 1440px;
 
-  /* Compatibility aliases for the existing protected pages. */
-  --primary-color: var(--cyan-paper);
-  --primary-dark: #064d73;
-  --secondary-color: var(--green-paper);
-  --bg-color: var(--paper-100);
-  --card-bg: var(--paper-50);
-  --text-color: var(--paper-ink);
-  --text-muted: var(--paper-muted);
-  --border-color: var(--paper-line);
-  --font-family: var(--font-body);
-  --warning-color: var(--amber-paper);
-  --danger-color: var(--red-paper);
-  --normal-color: var(--green-paper);
-  --normal-bg: #e8f2e8;
 }
 
 body {
@@ -87,8 +68,7 @@ p {
 }
 
 h1,
-h2,
-.display-type {
+h2 {
   font-family: var(--font-display);
   font-stretch: semi-expanded;
   letter-spacing: -0.035em;
@@ -145,7 +125,7 @@ a {
   to { opacity: 1; }
 }
 
-/* Legacy-compatible protected-page surfaces. */
+/* Shared Paper surfaces. */
 .card {
   margin-bottom: var(--space-6);
   padding: var(--space-6);
@@ -174,10 +154,6 @@ a {
   text-align: center;
 }
 
-.status-normal { background: var(--green-paper) !important; }
-.status-elevated { background: var(--amber-paper) !important; }
-.status-critical { background: var(--red-paper) !important; }
-
 .inline-icon-label {
   display: inline-flex;
   gap: 0.4rem;
@@ -191,10 +167,6 @@ a {
 
   .card {
     padding: 1rem;
-  }
-
-  .assistant-layout {
-    grid-template-columns: minmax(0, 1fr) !important;
   }
 
   .page-container table {

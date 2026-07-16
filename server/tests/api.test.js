@@ -54,7 +54,7 @@ describe('Matchday Command API Endpoints', () => {
   };
 
   const mockGeneratorFailure = async () => {
-    throw new Error('Gemini model failed');
+    throw new Error('Vertex AI model failed');
   };
 
   describe('Vertex AI Client Initialization', () => {
@@ -238,7 +238,7 @@ describe('Matchday Command API Endpoints', () => {
     });
   });
 
-  describe('Gemini Endpoint Success Modes', () => {
+  describe('Vertex AI Endpoint Success Modes', () => {
     it('POST /api/fan-assistant returns structured JSON response with correct values and requires zero API key', async () => {
       let promptCaptured = null;
       let systemInstructionCaptured = null;
@@ -368,7 +368,7 @@ describe('Matchday Command API Endpoints', () => {
       expect(res.body.message).toContain('generator function is not configured');
     });
 
-    it('returns 500 error on Gemini SDK exception without leaking details', async () => {
+    it('returns 500 error on a Vertex AI generator exception without leaking details', async () => {
       const app = createApp({ generateContentFn: mockGeneratorFailure });
 
       const res = await request(app)
@@ -382,10 +382,10 @@ describe('Matchday Command API Endpoints', () => {
 
       expect(res.body.error).toBe('Generative Service Failure');
       expect(res.body.message).toContain('An error occurred while processing');
-      expect(JSON.stringify(res.body)).not.toContain('Gemini model failed');
+      expect(JSON.stringify(res.body)).not.toContain('Vertex AI model failed');
     });
 
-    it('returns 500 error if Gemini returns invalid JSON structure', async () => {
+    it('returns 500 error if the generative model returns invalid JSON structure', async () => {
       const app = createApp({ generateContentFn: mockGeneratorInvalidJSON });
 
       const res = await request(app)
@@ -400,7 +400,7 @@ describe('Matchday Command API Endpoints', () => {
       expect(res.body.error).toBe('Invalid Output Format');
     });
 
-    it('returns 500 error if Gemini returns valid JSON but wrong schema properties', async () => {
+    it('returns 500 error if the generative model returns valid JSON but wrong schema properties', async () => {
       const app = createApp({ generateContentFn: mockGeneratorInvalidSchema });
 
       const res = await request(app)

@@ -1,4 +1,4 @@
-import type { VenueData, IncidentData, GateData } from '../types';
+import type { VenueData } from '../types';
 
 export const SIMULATED_VENUES: VenueData[] = [
   {
@@ -65,7 +65,7 @@ export const SIMULATED_VENUES: VenueData[] = [
     concessions: [
       { id: 'con-1', name: 'Taco Plaza Sec 120', type: 'Food', waitTimeMinutes: 25, isAccessible: true },
       { id: 'con-2', name: 'Restroom Block Sec 134', type: 'Restroom', waitTimeMinutes: 15, isAccessible: true },
-      { id: 'con-3', name: 'Official Souvenirs Plaza', type: 'Merchandise', waitTimeMinutes: 30, isAccessible: true }
+      { id: 'con-3', name: 'Souvenirs Plaza', type: 'Merchandise', waitTimeMinutes: 30, isAccessible: true }
     ],
     accessibilityRequests: [
       { id: 'acc-201', type: 'Sign Language', location: 'Information Booth 2', status: 'Pending', timestamp: '19:02' }
@@ -129,7 +129,3 @@ export const SIMULATED_VENUES: VenueData[] = [
     ]
   }
 ];
-
-// Re-export compatible lists for tests/compilation elsewhere
-export const SIMULATED_INCIDENTS: IncidentData[] = SIMULATED_VENUES[2].incidents;
-export const SIMULATED_GATES: GateData[] = SIMULATED_VENUES[2].gates;

@@ -107,6 +107,19 @@ describe('Simulated Fan Assistant Response Logic', () => {
     expect(wheelchairResponse.answer).toContain('Gate 2'); // Gate 2 is accessibleReady
   });
 
+  it('describes pending accessibility support without claiming dispatch', () => {
+    const venueWithPendingSupport: VenueData = {
+      ...mockTestVenue,
+      accessibilityRequests: [
+        { id: 'a1', type: 'Wheelchair Assistance', location: 'Gate 2', status: 'Pending', timestamp: '19:10' }
+      ]
+    };
+    const response = getSimulatedAssistantResponse('accessible-guidance', null, venueWithPendingSupport);
+
+    expect(response.answer).toContain('1 pending accessibility support request');
+    expect(response.answer).not.toMatch(/dispatch/i);
+  });
+
   it('uses the shared simulated announcement and clearly limits deterministic translation', () => {
     const response = getSimulatedAssistantResponse('translate-announcement', null, mockTestVenue);
     const responseText = `${response.answer} ${response.action} ${response.telemetryUsed} ${response.disclaimer}`;

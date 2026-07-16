@@ -106,7 +106,8 @@ export const getSimulatedAssistantResponse = (
       action += ` For mobility support inside the stadium, locate the ${activeBooths}.`;
 
       if (pendingReqsCount > 0) {
-        answer += ` Note: Stadium operations has ${pendingReqsCount} pending accessibility ticket(s) currently being dispatched.`;
+        const supportRequestLabel = pendingReqsCount === 1 ? 'request' : 'requests';
+        answer += ` Note: This simulated snapshot contains ${pendingReqsCount} pending accessibility support ${supportRequestLabel}.`;
       }
 
       return {

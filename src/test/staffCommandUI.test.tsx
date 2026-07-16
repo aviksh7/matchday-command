@@ -48,7 +48,7 @@ describe('Staff Command Center UI Dashboard Component', () => {
     const table = screen.getByRole('table', { name: /Simulated service waits for Mexico City Stadium Demo/i });
     expect(within(table).getByRole('row', { name: /Taco Plaza Sec 120 Food 25 min High pressure/i })).toBeInTheDocument();
     expect(within(table).getByRole('row', { name: /Restroom Block Sec 134 Restroom 15 min Elevated pressure/i })).toBeInTheDocument();
-    expect(within(table).getByRole('row', { name: /Official Souvenirs Plaza Merchandise 30 min High pressure/i })).toBeInTheDocument();
+    expect(within(table).getByRole('row', { name: /Souvenirs Plaza Merchandise 30 min High pressure/i })).toBeInTheDocument();
     expect(screen.queryByText('Maple Grills Sec 102')).not.toBeInTheDocument();
   });
 

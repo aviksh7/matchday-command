@@ -13,11 +13,11 @@ Matchday Command is an independent simulated stadium operations and fan-guidance
 
 ### Fan Mode
 
-Fan Mode provides guidance about simulated gate pressure, service wait times, accessibility-ready entrances, transit-node pressure/status, and sustainability. It also includes a limited translation demonstration. It does not provide real routing, official accessibility information, transit schedules, or guaranteed translation.
+Fan Mode provides guidance about simulated gate pressure, service wait times, accessibility-ready entrances, transit-node pressure/status, and sustainability. It also includes a limited Spanish/French translation demonstration for one shared simulated announcement; the deterministic local fallback is a fixed sample. It does not provide real routing, official accessibility information, transit schedules, broad language coverage, or guaranteed translation accuracy.
 
 ### Operations Mode
 
-Operations Mode displays simulated gate, crowd, staffing, accessibility, incident, transit-pressure, and sustainability information. Incident Support produces structured prototype drafts through Vertex AI via Cloud Run or deterministic local fallback. Drafts require human review and do not dispatch staff or connect to operational systems.
+Operations Mode displays simulated gate, crowd, locally derived service-queue, staffing, accessibility, incident, transit-pressure, and sustainability information. Incident Support produces structured prototype drafts through Vertex AI via Cloud Run or deterministic local fallback, with visible source and limitation labels. Drafts require qualified human review and do not dispatch staff, publish announcements, or connect to operational systems.
 
 ## Implemented result
 

@@ -58,7 +58,7 @@ export function createApp({ generateContentFn, rateLimitWindowMs = 60 * 1000, ra
     next();
   });
 
-  // Health Endpoint: Minimal response, does not invoke Gemini
+  // Health endpoint: minimal response, does not invoke Vertex AI
   app.get('/health', (req, res) => {
     res.json({
       status: 'ok',
@@ -168,7 +168,7 @@ Return a structured JSON object matching the requested schema.`;
       required: ['summary', 'recommendedAction', 'simulatedDataUsed', 'limitations']
     };
 
-    // 5. Call Injected Gemini Function
+    // 5. Call the injected Vertex AI generator
     try {
       const responseText = await generateContentFn(prompt, systemInstruction, responseSchema);
       
@@ -298,7 +298,7 @@ Return a structured JSON object matching the requested schema.`;
       ]
     };
 
-    // 5. Call Injected Gemini Function
+    // 5. Call the injected Vertex AI generator
     try {
       const responseText = await generateContentFn(prompt, systemInstruction, responseSchema);
       
