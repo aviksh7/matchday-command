@@ -1,30 +1,28 @@
-# Project Brief: Matchday Command
+# Project brief: Matchday Command
 
 ## Overview
-**Matchday Command** is a simulated stadium operations control center and fan guidance assistant prototype designed for high-pressure tournament match days (e.g. FIFA World Cup 2026). The goal is to leverage Generative AI to improve real-time crowd safety, multilingual support, and operations coordination.
 
-- **Project Name:** Matchday Command
+Matchday Command is an independent simulated stadium operations and fan-guidance prototype for high-pressure tournament match days. It explores how one selected simulated venue snapshot can support both readable fan guidance and prototype operations decision support.
+
+- **Project name:** Matchday Command
 - **Tagline:** GenAI stadium operations and fan guidance for high-pressure tournament match days.
+- **Live application:** <https://matchday-command-2026.web.app>
+- **Public repository:** <https://github.com/aviksh7/matchday-command>
 
----
+## Product perspectives
 
-## Core Product Modes
+### Fan Mode
 
-### 1. Fan Mode
-Enables visitors to navigate the high-pressure environment safely and easily.
-- **Multilingual Assistant:** Handles queries, translates instructions, and resolves accessibility/routing inquiries.
-- **Crowd-Aware Navigation:** Routes fans away from crowded gates and long wait queues.
-- **Sustainability & Accessibility:** Accessible restroom mappings, public transit schedules, and recycling tips.
+Fan Mode provides guidance about simulated gate pressure, service wait times, accessibility-ready entrances, transit-node pressure/status, and sustainability. It also includes a limited translation demonstration. It does not provide real routing, official accessibility information, transit schedules, or guaranteed translation.
 
-### 2. Staff/Ops Mode
-Provides central organizers and field volunteers with real-time operational intelligence.
-- **Telemetry Dashboard:** Visualizes simulated gate pressures, queue durations, and concession times.
-- **Incident Dispatch Queue:** Collects crowd safety issues or maintenance reports.
-- **AI Action Plans:** Generates incident action plans and volunteer instruction summaries via GenAI.
+### Operations Mode
 
----
+Operations Mode displays simulated gate, crowd, staffing, accessibility, incident, transit-pressure, and sustainability information. Incident Support produces structured prototype drafts through Vertex AI via Cloud Run or deterministic local fallback. Drafts require human review and do not dispatch staff or connect to operational systems.
 
-## Simulated Architecture
-- All maps, telemetry, route times, incidents, and transit departures are read-only simulated mockup lists.
-- No live external connections to real tournament databases, live venue APIs, or municipal transit systems. All operations are driven by simulated crowd telemetry.
-- The UI maintains a persistent disclaimer banner informing the user of the simulated prototype nature.
+## Implemented result
+
+The React frontend is deployed on Firebase Hosting. Same-origin `/api/**` requests are routed to a Cloud Run Node.js API, which authenticates to Vertex AI with its attached service account and ADC. Both AI flows expose their response source and retain simulation limitations. Full architecture and evaluator evidence are maintained in [../README.md](../README.md).
+
+## Prototype boundary
+
+All map, venue, crowd, incident, route, transit, and wait-time inputs are local simulated data. No official FIFA, tournament, venue, ticketing, transit, municipal, public-address, medical, security, or emergency systems are connected. Matchday Command is not affiliated with FIFA or venue operators.

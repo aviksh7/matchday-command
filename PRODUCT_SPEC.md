@@ -1,64 +1,78 @@
-# Product Specification: Matchday Command
+# Product specification: Matchday Command
 
 **GenAI stadium operations and fan guidance for high-pressure tournament match days.**
 
-Matchday Command addresses the complexity of managing 80,000+ soccer fans during tournament match days. It establishes a coordinated digital environment linking fan guidance with staff operational metrics.
+This specification defines implemented behavior, architecture boundaries, and scope. The primary evaluator overview and full feature-evidence matrix live in [README.md](README.md).
 
----
+## Product model
 
-## 1. Feature Map & System Architecture
+Matchday Command presents local simulated venue snapshots through two product modes:
 
-```mermaid
-graph TD
-    A[Matchday Command Client] --> B{Selected Mode}
-    B -->|Fan Mode| C[Fan Assistant]
-    B -->|Staff Mode| D[Staff Command]
-    
-    C --> C1[Multilingual AI Chat]
-    C --> C2[Crowd-Aware Routes]
-    C --> C3[Accessibility Details]
-    C --> C4[Sustainability Tips]
-    
-    D --> D1[Operations Dashboard]
-    D --> D2[Wait Times & Gate Pressures]
-    D --> D3[Incident Response Queue]
-    D --> D4[GenAI Action Plan Drawer]
-```
+### Fan Mode
 
----
+- Queries about lower-pressure open gates and lower-wait simulated services.
+- Accessibility-ready gate and support-point guidance.
+- Simulated transit pressure/status comparisons and egress cautions.
+- Simulated sustainability indicators and tips.
+- A limited translation demonstration with a fixed Spanish/French local fallback sample.
+- A visible source label and limitations notice on generated responses.
 
-## 2. User Flows
+Fan guidance is not real routing, verified accessibility information, a transit schedule, or official venue advice.
 
-### Flow A: Fan Navigation & Assistance
-1. **Entrance:** A fan arrives at the stadium and opens the Matchday Command app.
-2. **Language Selection:** The fan queries the assistant in their native language (e.g., Spanish: *"¿Dónde está la rampa de acceso para silla de ruedas más cercana?"*).
-3. **GenAI Processing:** The server-side Gemini endpoint translates, queries local venue data, and returns a tailored response in Spanish.
-4. **Navigation:** The app presents a simulated map routing suggestion avoiding high-density zones (e.g., Gate A bottleneck) and recommending a clear path through Gate B.
+### Operations Mode
 
-### Flow B: Operations Command & Incident Resolution
-1. **Alert Trigger:** The central dashboard highlights a high-density alert at the Gate A exit ramp (Gate Pressure: 85%).
-2. **Incident Creation:** A new incident ticket (`INC-001`) is generated in the queue.
-3. **Action Plan Generation:** Staff clicks "Generate Action Plan". The Gemini API reviews current gate statistics and outputs a tactical response plan (e.g., *"1. Redirect staff to Gate B entrance. 2. Push notification alert to arriving transit riders. 3. Adjust digital signage boards."*).
-4. **Volunteer Update:** The system packages the action plan and translates it into instructions for field volunteers.
+- Simulated gate pressure, crowd density, queue, volunteer coverage, accessibility-request, transit-pressure, and sustainability panels.
+- A locally calculated priority queue and deterministic recommendations.
+- A local incident list with in-memory status changes.
+- Existing-incident selection and a custom prototype scenario builder.
+- Vertex AI or deterministic local response-planning drafts for incidents.
 
----
+Operational actions, briefings, and announcement text are drafts requiring qualified human review. The application does not dispatch staff, notify fans, control signage, publish announcements, or contact emergency services.
 
-## 3. Simulated Operations Metrics
+## Architecture boundary
 
-To ensure a functional mock environment without requiring real integrations, the app leverages simulated operational structures:
+1. Firebase Hosting serves the React frontend.
+2. Firebase Hosting rewrites same-origin `/api/**` requests to the Cloud Run Node.js API.
+3. Cloud Run validates requests and calls Vertex AI using its attached service account and ADC.
+4. The browser validates structured responses and displays the source.
+5. Failed, timed-out, non-successful, or invalid responses use deterministic local browser logic.
 
-| Metric | Type | Simulated Range | Description |
-| :--- | :--- | :--- | :--- |
-| **Gate Pressure** | Percentage / Status | 0% to 100% (Low / Med / High) | Measures gate throughput density. |
-| **Concession wait times** | Duration | 5 min to 45 min | Queue wait estimates at specific venue quadrants. |
-| **Active Incidents** | Queue | Active / Closed | Log of safety or crowd flow concerns requiring action plans. |
-| **Transit Departures** | Timeline | 0 min to 60 min | Train and bus departures from the stadium transit terminal. |
+`GOOGLE_CLOUD_PROJECT` is supplied through deployment configuration; ADC supplies authentication credentials. The local fallback is frontend code, not a cloud service.
 
----
+## Implemented AI contracts
 
-## 4. Evaluator Priority Alignment
+| Flow | Cloud output | Local fallback |
+| --- | --- | --- |
+| Fan Assistant | Summary, recommended action, simulated data used, limitations | Deterministic response selected from the prompt category and current venue snapshot |
+| Incident Support | Situation summary, priority, actions, briefing, announcement draft, accessibility note, crowd/transit note, simulated data used, limitations | Deterministic incident summary and draft outputs grounded in the current local snapshot |
 
-- **Problem Alignment (HIGH):** The feature set directly mitigates congestion, coordinates volunteers, and assists disabled attendees.
-- **Code Quality (HIGH):** Fully componentized page modularity and robust prop-types.
-- **Google Services (VERY HIGH):** Utilizes Firebase Hosting (static asset server), Cloud Run (compute container), and Gemini (Generative models).
-- **Security (MEDIUM):** Avoids tracking user locations or storing credentials. Pure client-side UI with backend API key isolation.
+Both paths preserve simulation wording. The UI identifies `Vertex AI via Cloud Run` or `Local deterministic fallback`.
+
+## Data and state boundaries
+
+- Three local demo venues provide fictional capacities, gates, zones, concessions, incidents, accessibility requests, transit pressure/status, and sustainability values.
+- Venue selection and incident status changes are browser state and are not persisted.
+- The application has no user authentication or application database.
+- Cloud AI queries are processed by Cloud Run and Vertex AI; the application does not intentionally write queries or generated responses to an application database.
+
+## Scope status
+
+| Capability | Status |
+| --- | --- |
+| Selected simulated venue snapshots | Implemented |
+| Schematic keyboard-operable stadium map | Implemented |
+| Fan guidance and operations calculations | Implemented from local data |
+| Vertex AI Fan Assistant and Incident Support | Implemented through Cloud Run |
+| Deterministic local fallback for both AI flows | Implemented |
+| Source and limitation labels | Implemented |
+| Limited translation demonstration | Implemented with explicit limitations |
+| Responsive and reduced-motion behavior | Implemented |
+| Persisted incidents, accounts, or history | Not implemented |
+| Continuously updating or official telemetry | Not implemented |
+| Real routing, transit feeds, or departure information | Not implemented |
+| Dispatch, notification, signage, PA, or emergency integration | Not implemented |
+| Comprehensive localization | Postponed |
+
+## Safety and independence
+
+All map, venue, crowd, incident, transit, route, queue, and wait-time content is simulated prototype data. Matchday Command has no access to official FIFA, tournament, stadium, ticketing, public-address, transit, emergency, or municipal systems. It is an independent prototype and is not affiliated with FIFA or venue operators.

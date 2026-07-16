@@ -3,7 +3,8 @@ import { createApp } from './app.js';
 import dotenv from 'dotenv';
 
 // Load local environment variables for development.
-// In production, GOOGLE_CLOUD_PROJECT is automatically set on Cloud Run.
+// In production, GOOGLE_CLOUD_PROJECT is supplied by deployment configuration;
+// the attached Cloud Run service account provides ADC authentication credentials.
 dotenv.config();
 
 let ai;

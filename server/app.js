@@ -8,7 +8,7 @@ const allowedOrigins = [
 ];
 
 /**
- * Creates the Express application with dependency-injected Gemini capabilities.
+ * Creates the Express application with dependency-injected Vertex AI generation.
  */
 export function createApp({ generateContentFn, rateLimitWindowMs = 60 * 1000, rateLimitMax = 30 }) {
   const app = express();
@@ -17,9 +17,8 @@ export function createApp({ generateContentFn, rateLimitWindowMs = 60 * 1000, ra
   app.use(express.json({ limit: '10kb' }));
 
   // CORS Configuration: Exact allowlist only (no '*' wildcard).
-  // Note: Future Firebase Hosting rewrite configuration will allow routing
-  // frontend requests to Cloud Run under the same-origin domain, removing
-  // the CORS requirement for production requests.
+  // Firebase Hosting routes production /api/** requests to Cloud Run under
+  // the same origin. The allowlist protects supported direct browser requests.
   app.use(cors({
     origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {

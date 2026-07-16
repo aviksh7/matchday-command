@@ -3,6 +3,7 @@
 @import './styles/home.css';
 @import './styles/crowd-map.css';
 @import './styles/fan-assistant.css';
+@import './styles/project-details.css';
 
 *, *::before, *::after {
   box-sizing: border-box;

@@ -1,32 +1,41 @@
-# Security Policy & Safeguards
+# Security and privacy
 
-This document explains the security architecture of **Matchday Command**, addressing the **Security (MEDIUM impact)** evaluation priority.
+This document describes the implemented security and privacy boundaries of Matchday Command. For the complete product and architecture overview, see [README.md](README.md).
 
----
+## Server-side Vertex AI authentication
 
-## 1. Cloud Authentication & API Access
+- The React frontend contains no AI credential, Google Cloud runtime credential, or secret.
+- The Cloud Run Node.js API authenticates to Vertex AI through its attached dedicated runtime service account and Application Default Credentials (ADC).
+- The runtime service account has the Vertex AI permissions required by the deployed service. No downloadable runtime service-account key is used.
+- `GOOGLE_CLOUD_PROJECT` is explicitly supplied through deployment configuration. ADC provides authentication credentials; it does not populate that environment variable.
+- The former Gemini API-key integration and its legacy Secret Manager secret were deleted. Production does not use either path.
 
-- **Zero Client-Side Secrets:** No Google Gemini API keys, Google Cloud credentials, or development secrets are exposed or hardcoded in the frontend React application.
-- **Server-Side Mediation:** The backend API is hosted in a protected Google Cloud Run microservice environment.
-- **Vertex AI IAM Authentication:** In production, the Cloud Run backend uses Application Default Credentials (ADC) to authenticate with the Vertex AI API. No static API keys or Secret Manager secrets are required or delivered to the container.
-- **Least Privilege Service Account:** The Cloud Run service runs under a dedicated service account identity:
-  `matchday-command-api@matchday-command-2026.iam.gserviceaccount.com`
-  which has been granted the `roles/aiplatform.user` IAM role. The old `GEMINI_API_KEY` Secret Manager secret is no longer used by this service and will be permanently deleted after validation of the Vertex AI deployment.
+## Request boundary and safeguards
 
----
+Firebase Hosting serves the browser application and routes same-origin `/api/**` requests to Cloud Run. For direct browser requests, the API uses an exact origin allowlist for local development and the two Firebase Hosting domains. CORS is a browser-origin policy, not user authentication.
 
-## 2. Authentication & Data Protection
+The API implements:
 
-- **No Auth / No Database for MVP:** To reduce attack surface and keep the codebase lightweight under the 10 MB limit, this prototype uses local, read-only simulated venue data.
-- **Data Privacy:** Because there are no database reads/writes and no user login portals, user metadata is never captured, stored, or transmitted.
-- **Simulated Context:** All maps, incidents, routes, and queue data are simulated prototype representations. No real-world fan names, PII (Personally Identifiable Information), or emergency dispatch vectors are integrated.
-- **Abuse & Rate Limiting:** A lightweight, in-memory rate limiter is configured per-container instance. This provides basic request rate throttling for development and cost control, but does not use a distributed store (e.g. Redis) and is limited to per-instance container memory.
+- a 10 KB JSON request-body limit;
+- maximum lengths for user query, incident, venue, and simulated-context fields;
+- rejection of a small set of obvious prompt-injection patterns;
+- a basic in-memory rate limit of 30 non-health requests per minute per observed client address and container instance;
+- structured response-schema checks on the server and again in the browser;
+- generic JSON error responses that do not expose model errors, credentials, stack traces, or internal configuration.
 
----
+The in-memory rate limiter is basic abuse and cost protection. It is not distributed across Cloud Run instances and should not be described as a complete abuse-prevention system.
 
-## 3. Brand Protection & Intellectual Property
+## Data handling and user responsibility
 
-To comply with tournament guidelines and prevent trademark infringements:
-- **No Official Brand Assets:** No official tournament logos, trophies, official mascots, emblems, or trademarked visual assets are hosted in this repository.
-- **Clear Demarcation:** The user interface features a persistent notice labeling the application as a simulated prototype.
-- **Asset Weight:** All custom vector icons and styling variables are local and lightweight.
+- The application has no user authentication or application database.
+- The application does not intentionally write user queries or generated responses to an application database.
+- Queries submitted to cloud AI features are processed by Cloud Run and Vertex AI.
+- Google Cloud services may create operational logs according to the project's service and logging configuration. This project does not claim guaranteed zero retention or zero logging outside its own application storage behavior.
+- Users must not submit personal, confidential, medical, or emergency information.
+- A failed, timed-out, rejected, or invalid cloud response causes the browser to use deterministic local fallback logic. That fallback runs in the browser and does not create a second cloud processing path.
+
+## Prototype and operational boundary
+
+All venue, crowd, incident, accessibility, transit, route, and queue inputs are simulated. The application has no access to official FIFA, tournament, venue, ticketing, public-address, transit, municipal, medical, security, or emergency systems. Matchday Command is an independent prototype and is not affiliated with FIFA or venue operators.
+
+Generated incident actions, volunteer briefings, and announcement text are prototype drafts requiring qualified human review. They must not replace trained venue, security, medical, or emergency personnel.

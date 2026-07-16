@@ -1,37 +1,71 @@
-# Build Plan & Development Roadmap
+# Build plan and development roadmap
 
-This plan maps out the incremental milestones for **Matchday Command** to ensure a focused, modular delivery.
+This file preserves the project's incremental development history while recording the implemented result and work that changed or was postponed.
 
----
+## Original roadmap history
 
-## Roadmap Milestones
+### Milestone 0: Project foundation — completed
 
-### 🏁 Milestone 0: Project Foundation (Completed)
-- [x] Scaffolding React + Vite + TypeScript.
-- [x] Initializing directories (`src/components`, `src/pages`, `src/data`, `src/types`, `src/styles`, `src/test`).
-- [x] Base routing navigation, layout skeleton, and simulated banner.
-- [x] Unit testing rig setup via Vitest and React Testing Library.
-- [x] Core documentation (README, SECURITY, TESTING, ACCESSIBILITY, SUBMISSION, PRODUCT_SPEC).
+- [x] Scaffold React, Vite, and TypeScript.
+- [x] Establish component, page, data, logic, style, and test structure.
+- [x] Add base navigation, application shell, and simulation notice.
+- [x] Configure Vitest and React Testing Library.
+- [x] Create the initial evaluator documentation set.
 
-### 📊 Milestone 1: Simulated Data & Base Dashboards
-- [ ] Integrate full simulated venue data (concession wait times, gate pressure telemetry, active incidents lists, and public transit schedules).
-- [ ] Implement operations staff dashboard panels showing gate pressures and queue durations.
-- [ ] Build Fan Mode view card components for route selection, accessible toilet guides, and transit departures.
-- [ ] Style interfaces utilizing custom modern CSS theme variables.
+### Milestone 1: Simulated data and dashboards — completed with scope changes
 
-### 🤖 Milestone 2: Multilingual AI Chat & Operations Action Plans
-- [ ] Create the Fan Mode assistant chat window showing mock query suggestions and simulated replies.
-- [ ] Implement the Incident Support queue detail drawer.
-- [ ] Add the AI action plan button which simulates Gemini's crowd control or incident response instructions.
-- [ ] Configure local translation simulations for volunteer guidelines.
+- [x] Add local simulated venue data for gates, zones, concessions, incidents, accessibility, transit pressure/status, and sustainability.
+- [x] Implement Staff Command operational panels and priority calculations.
+- [x] Implement Fan Assistant guidance categories and selected-venue views.
+- [x] Build the Floodlit visual system and responsive layouts.
+- [~] Original references to transit schedules and accessible toilet maps changed to simulated transit pressure/status and accessibility-ready gate guidance.
 
-### 🔄 Milestone 3: Live Crowd Simulation & Dynamic Telemetry
-- [ ] Add simulation intervals (ticking logic) that mock real-time shifts in gate pressure and restroom queues.
-- [ ] Trigger warning flags (e.g., Gate A bottlenecks) that update routes suggested to fans.
-- [ ] Implement responsive UI overrides for mobile/desktop viewports.
+### Milestone 2: AI guidance and incident support — completed with explicit limits
 
-### 🚀 Milestone 4: Deployment Preparation & Optimization
-- [ ] Ensure the project is strictly **under 10 MB** (remove local cache assets, build files, etc.).
-- [ ] Set up Firebase Hosting config (`firebase.json` placeholder).
-- [ ] Document Google Cloud Run environment scripts.
-- [ ] Run a final automated unit test run (`npm run test`) and production check (`npm run build`).
+- [x] Implement Fan Assistant quick prompts and custom queries.
+- [x] Implement Incident Support selection, local scenario creation, and structured drafts.
+- [x] Add Vertex AI through a Cloud Run Node.js API for two structured roles.
+- [x] Add deterministic local fallback and visible source labels for both AI flows.
+- [~] Multilingual work is a limited translation demonstration, not comprehensive localization.
+- [~] Incident actions and announcements remain drafts; no dispatch or publication is performed.
+
+### Milestone 3: Map, responsive behavior, and accessibility — partially completed
+
+- [x] Implement the interactive schematic stadium map and selected-snapshot guidance.
+- [x] Add responsive layouts, visible focus, map keyboard controls, status announcements, and reduced-motion support.
+- [ ] **Postponed:** continuously changing simulation intervals. The implemented product intentionally presents a selected simulated venue snapshot.
+- [ ] **Postponed:** real routing or external telemetry integration; these remain outside prototype scope.
+
+### Milestone 4: Deployment preparation and optimization — completed
+
+- [x] Configure Firebase Hosting and the same-origin `/api/**` Cloud Run rewrite.
+- [x] Deploy the Node.js API to Cloud Run and use Vertex AI through ADC/IAM.
+- [x] Add frontend and backend automated tests and full quality commands.
+- [x] Configure Hosting workflows to run `npm run check` before deployment.
+- [x] Reduce Cloud Run source upload through `server/.gcloudignore`.
+
+## Attempt 2 history
+
+### Milestone 1A: Tooling and deployment efficiency — completed
+
+- [x] Pin Node 22.
+- [x] Enable strict TypeScript checks.
+- [x] Enforce zero-warning Oxlint.
+- [x] Harden CI quality gates and deployment source packaging.
+- [x] Verify the 74-frontend / 18-backend / 92-total test checkpoint.
+
+### Milestone 1B: Documentation and evaluator visibility — completed
+
+- [x] Reconcile product and Google Cloud claims against code, configuration, tests, and deployed architecture.
+- [x] Establish README as the primary evaluator entry point.
+- [x] Focus security, testing, accessibility, product, and submission documents by ownership.
+- [x] Replace the internal Project Details checklist with a concise product-facing explanation.
+- [x] Add dedicated Project Details coverage, bringing the verified result to 77 frontend and 18 backend tests (95 total).
+- [x] Pass Node 22 lint, build, test, diff, stale-claim, and responsive inspection checks.
+
+## Remaining Attempt 2 work
+
+- [ ] Perform the final public submission smoke test and re-verify documentation counts during the final submission pass.
+- [ ] Address any later evaluator feedback only in separately approved milestones.
+
+No later milestone should be described as complete before its implementation and verification evidence exists.

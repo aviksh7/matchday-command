@@ -2,103 +2,146 @@
 
 **GenAI stadium operations and fan guidance for high-pressure tournament match days.**
 
-Matchday Command is a smart stadium command center and fan assistant prototype designed for high-pressure soccer tournament match days (e.g., FIFA World Cup 2026). It uses Generative AI to improve real-time navigation, crowd management, multilingual communication, and operational decision-making.
+[Open the live application](https://matchday-command-2026.web.app) · [View the public repository](https://github.com/aviksh7/matchday-command)
 
----
+> **Simulated independent prototype.** All venue, gate, crowd, incident, transit, route, and wait-time information is local simulated prototype data. Matchday Command does not connect to official tournament, stadium, ticketing, transit, emergency, or municipal systems and is not affiliated with FIFA or any venue operator. It must not be used for real safety, medical, travel, or operational decisions.
 
-### ⚠️ Simulated Prototype Disclaimer
-**This project is a simulated prototype built for demonstration and evaluation purposes (Build with AI 2026 Challenge).**
-- All stadium, crowd density, queue wait times, incident alerts, transit, and routing data are entirely simulated mockups.
-- This application does **not** connect to real tournament databases, live ticketing portals, venue cameras, or emergency dispatch services.
-- No official FIFA tournament names, emblems, mascots, trophies, or official brand assets are used.
+## The problem
 
----
+Large tournament match days concentrate fan movement, accessibility needs, queues, transit pressure, volunteer coordination, and incident decisions into a short, high-pressure window. Fans need clear guidance while operations teams need a shared view of the same conditions.
 
-## Evaluator Evidence & Judging Priorities
+## The solution
 
-Matchday Command is designed from the ground up around the Build with AI 2026 Challenge priorities:
+Matchday Command is a working prototype that presents one **selected simulated venue snapshot** through two perspectives:
 
-| Judging Priority | Impact Level | How We Address It |
-| :--- | :--- | :--- |
-| **Google Service Usage** | **VERY HIGH** | Integrated development using Google Antigravity, planned deployment on Firebase Hosting, backend operations runner on Google Cloud Run, and Gemini API for intelligence. |
-| **Problem Statement Alignment** | **HIGH** | Targets the real-world operational challenges of massive stadium tournaments (crowd flow, incident resolution, multilingual support). |
-| **Code Quality** | **HIGH** | Strict React + TypeScript architecture, custom modular CSS design system, and clean state routing. |
-| **Security** | **MEDIUM** | Zero client-side API keys; Gemini API requests are mediated via a secure server-side Cloud Run bridge. Simulated mock data only. |
-| **Efficiency** | **MEDIUM** | Minimal bundle footprint, modern Vite build pipeline, and performant state rendering. |
-| **Testing** | **MEDIUM** | Configured Vitest + React Testing Library suite for fast, automated unit and integration tests. |
-| **Accessibility** | **LOW** | Follows W3C WCAG guidelines, utilizing semantic HTML, focus states, and keyboard navigation. |
+- **Fan Mode** offers grounded guidance about lower-pressure gates, lower-wait services, accessibility-ready entrances, simulated transit pressure/status, sustainability tips, and a limited translation demonstration.
+- **Operations Mode** presents simulated gate loads, crowd density, volunteer coverage, accessibility requests, incident queues, local recommendations, and structured response-planning drafts.
 
----
+The product combines deterministic local logic with two server-side Vertex AI flows. Every generated result identifies whether it came from **Vertex AI via Cloud Run** or the **local deterministic fallback**, and both paths retain simulation and limitation notices.
 
-## Challenge Vertical & Problem Alignment
-During major tournaments, tens of thousands of fans arrive at massive stadiums simultaneously. This creates significant bottlenecks at security gates, concession stands, restrooms, and public transit nodes. Volunteers and stadium staff are often overwhelmed, leading to communication delays and slow incident response.
-- **Vertical:** Stadium Operations, Fan Guidance, and Accessibility.
-- **Problem Alignment:** Matchday Command resolves this by providing a unified interface that balances crowd distributions, translates announcements, coordinates volunteer response, and generates instant incident action plans.
+## Deployed Google Cloud architecture
 
----
+```mermaid
+flowchart LR
+    Browser[Browser] --> Hosting[Firebase Hosting<br/>React frontend]
+    Hosting -->|same-origin /api/** rewrite| Run[Cloud Run<br/>Node.js API]
+    Run -->|attached service account + ADC| Vertex[Vertex AI]
+    Browser -. failed, timed-out, or invalid response .-> Fallback[Deterministic local fallback]
+```
 
-## Core Users
-1. **Fans:** Need real-time, multilingual assistance for routing, accessible facilities, transit departures, and sustainability guides.
-2. **Operations Staff / Venue Organizers:** Require a central control room dashboard monitoring gate pressures, bathroom queue times, and safety incidents.
-3. **Volunteers:** Receive clear instruction summaries and task assignments translated to their native languages.
+- **Firebase Hosting** serves the built React frontend and routes same-origin `/api/**` requests to the `matchday-command-api` Cloud Run service.
+- **Cloud Run** runs the Node.js API, validates requests and model output, and mediates Vertex AI calls.
+- **Vertex AI** is authenticated through the Cloud Run service's attached dedicated service account and Application Default Credentials (ADC). No frontend AI credential and no downloadable runtime service-account key are used.
+- `GOOGLE_CLOUD_PROJECT` is supplied explicitly through deployment configuration. ADC supplies authentication credentials; it does not supply that environment setting.
+- If a request fails, times out, returns a non-success status, or fails response-schema validation, browser code uses deterministic local logic. The fallback is part of the frontend, not another cloud service.
 
----
+### Vertex AI's two implemented roles
 
-## How the Solution Works
-The application supports two modes:
-### 1. Fan Mode
-- **Multilingual AI Assistant:** Translates queries and matches users with nearby services in their preferred language.
-- **Crowd-Aware Navigation:** Points fans away from high-density gates or long concession lines.
-- **Accessibility & Transit Guidance:** Maps wheelchair-friendly routes and displays live transit estimates.
+1. **Fan Assistant structured guidance** — returns a summary, recommended action, simulated data used, and a mandatory limitations note grounded in the selected simulated venue context.
+2. **Incident Support structured decision-support drafts** — returns a situation summary, priority, recommended actions, volunteer briefing, announcement draft, accessibility note, crowd/transit note, simulated data used, and limitations.
 
-### 2. Staff/Ops Mode
-- **Operations Dashboard:** Live tracking of gate throughput, restroom wait times, and incident locations.
-- **AI-Generated Action Plans:** Instant instructions for responding to crowd bottlenecks or safety hazards.
-- **Volunteer Coordinator:** Groups operational tasks and generates summaries for field staff.
+Incident recommendations, briefings, and announcement text are prototype drafts requiring review by qualified people. They do not dispatch staff, contact emergency services, or publish announcements.
 
----
+## Challenge-to-feature-to-evidence matrix
 
-## Google Services Plan
-- **Google Antigravity:** Powering the AI-assisted pair programming and development workflows.
-- **Firebase Hosting:** Selected for high-performance, edge-cached static distribution of the frontend React app.
-- **Google Cloud Run:** Hosts the lightweight server-side Node/Go microservice bridge.
-- **Gemini API:** Powers the backend text-to-text summaries, multilingual queries, and incident action plans. The API key remains strictly server-side inside Cloud Run environment secrets.
+| Challenge area | Implemented capability | Current limitation | Implementation or test evidence |
+| --- | --- | --- | --- |
+| Navigation and fan guidance | Interactive schematic stadium map plus deterministic gate, queue, and movement guidance for the selected venue snapshot. | Not GPS, geographically accurate, or turn-by-turn routing. | `src/pages/CrowdMap.tsx`, `src/components/StadiumMap.tsx`, `src/logic/crowdMap.ts`; `src/test/crowdMap*.test.*` |
+| Crowd management | Gate pressure, zone occupancy, volunteer coverage, and priority calculations from local simulated telemetry. | Snapshot data only; no continuously updating sensors or venue feed. | `src/pages/StaffCommand.tsx`, `src/logic/staffCommand.ts`, `src/logic/operations.ts`; staff and operations tests |
+| Accessibility | Accessibility-ready gate indicators, schematic accessible route, support-request summaries, and accessibility-aware guidance. | Not a verified physical venue route or guarantee of real-world accessibility. | `src/components/StadiumMap.tsx`, `src/logic/fanAssistant.ts`, `src/logic/incidentSupport.ts`; map keyboard and assistant tests |
+| Transportation | Simulated transit-node pressure/status comparisons and egress cautions. | No timetables, fares, GPS, municipal feeds, or arrival estimates. | `src/data/mockData.ts`, `src/logic/fanAssistant.ts`, `src/logic/crowdMap.ts`; fan and crowd-map tests |
+| Sustainability | Simulated refill, waste-sorting, and green-transit indicators with deterministic tips. | Demonstration metrics only; no measured environmental impact or facility feed. | `src/data/mockData.ts`, Fan Assistant and Staff Command; `src/test/fanAssistant.test.ts` |
+| Multilingual support | A limited translation demonstration; the local fallback contains a fixed Spanish/French sample announcement. | The UI is English and language coverage or translation accuracy is not guaranteed. | `src/pages/FanAssistant.tsx`, `src/logic/fanAssistant.ts`; fan assistant tests |
+| Operational intelligence | Venue overview, gate loads, dense zones, coverage gaps, accessibility requests, and prioritized operational items. | Local prototype data; incident status edits exist only in browser memory. | `src/pages/StaffCommand.tsx`, `src/logic/staffCommand.ts`; staff command tests |
+| Incident response | Existing incident selection, local scenario creation, local status updates, risk context, and response-planning drafts. | No dispatch, persistence, public-address connection, or emergency integration. | `src/pages/IncidentSupport.tsx`, `src/logic/incidentSupport.ts`; incident UI and logic tests |
+| Decision support | Structured actions, briefings, announcement drafts, accessibility notes, and crowd/transit notes. | Drafts require human review and do not replace trained security, medical, or venue personnel. | Incident schema in `server/app.js`; frontend and backend incident tests |
+| GenAI usage | Fan Assistant and Incident Support use Vertex AI through Cloud Run with structured output and visible source labels. | Cloud availability is not guaranteed; failures and invalid output use local deterministic logic. | `src/logic/apiClient.ts`, `server/client.js`, `server/index.js`, `server/app.js`; API client and backend tests |
+| Simulated-data honesty | Persistent global notice, page warnings, output limitations, prompt-grounding rules, and source labels. | No official operational information is available anywhere in the prototype. | `src/components/AppShell.tsx`, page notices, server instructions; App, data, fan, incident, and staff tests |
 
----
+## Security and privacy
 
-## Local Development Steps
+- The application has no user authentication or application database.
+- It does not intentionally write user queries or generated responses to an application database.
+- Queries submitted to cloud AI features are processed by Cloud Run and Vertex AI. Google Cloud services may create operational logs according to the project's service and logging configuration.
+- Users must not submit personal, confidential, medical, or emergency information.
+- The API applies an exact CORS allowlist for direct browser origins, a 10 KB JSON body limit, field-length validation, basic prompt-injection rejection, per-instance in-memory rate limiting, response-schema validation, and controlled JSON errors.
+
+See [SECURITY.md](SECURITY.md) for the focused security model.
+
+## Accessibility
+
+Implemented measures include semantic application landmarks and navigation, visible keyboard focus, a keyboard-operable stadium map (Tab, Enter, Space, and Escape), status announcements for AI loading and map context, native disabled states during requests, reduced-motion support, responsive layouts, and text labels alongside status colors.
+
+These measures do not constitute a formal WCAG certification or guarantee compatibility with every browser and assistive-technology combination. See [ACCESSIBILITY.md](ACCESSIBILITY.md).
+
+## Testing and quality gates
+
+Milestone 1B began from a verified checkpoint of **74 frontend tests and 18 backend tests (92 total)**. Project Details coverage is added during this documentation milestone; [TESTING.md](TESTING.md) records the latest verified post-implementation count.
+
+The repository enforces:
+
+- Node.js 22 (`.nvmrc` and package engine declarations)
+- strict TypeScript for the frontend and Vite configuration
+- Oxlint with warnings denied
+- frontend Vitest and React Testing Library tests
+- backend Vitest and Supertest tests with the Google AI client completely mocked
+- `npm run check` in Firebase Hosting merge and pull-request workflows
+
+Automated tests do not call Firebase Hosting, Cloud Run, Vertex AI, or other external cloud services.
+
+## Local development
 
 ### Prerequisites
-- Node.js 22.12 or newer
-- npm (the version bundled with Node.js 22 is supported)
 
-### Installation
-Clone the repository and install the dependencies:
+- Node.js 22.12 or newer (`nvm use` selects the pinned major version)
+- npm
+
+### Install and run the frontend
+
 ```bash
 npm ci
 npm --prefix server ci
-```
-
-### Run Locally
-Launch the Vite development server:
-```bash
 npm run dev
 ```
 
-### Build for Production
-Verify typescript compiles and assets package successfully:
+Without a reachable local API, AI requests safely resolve through the deterministic local fallback.
+
+### Optional local Vertex AI path
+
+To exercise the Node.js API locally against Vertex AI, authenticate ADC, copy the documented server environment values into a local uncommitted `.env`, start the server, and point Vite to it with `VITE_API_BASE_URL`:
+
 ```bash
+gcloud auth application-default login
+cp server/.env.example server/.env
+npm --prefix server start
+```
+
+No Gemini API key or downloaded runtime service-account key is required. Local `.env` files must not be committed.
+
+### Quality commands
+
+```bash
+npm run lint
 npm run build
-```
-
-### Run Unit Tests
-Execute the Vitest test suite:
-```bash
 npm run test
-```
-
-### Run the Full Quality Gate
-Run linting, the production build, and all frontend and backend tests:
-```bash
+npm run test:server
+npm run test:all
 npm run check
 ```
+
+## Deployment overview
+
+The frontend is built into `dist/` and served by Firebase Hosting. `firebase.json` keeps the `/api/**` Cloud Run rewrite before the single-page-app fallback. The Node.js API is deployed separately to Cloud Run with `GOOGLE_CLOUD_PROJECT` and location supplied by deployment configuration, and it uses its attached runtime identity for Vertex AI access. The Hosting workflows run the full repository quality gate before live or preview deployment.
+
+No deployment is performed as part of Milestone 1B.
+
+## Assumptions and limitations
+
+- All capacities, locations, statuses, percentages, incidents, routes, queues, and sustainability values are fictional prototype inputs.
+- The selected venue view is a snapshot, not a continuously updating feed.
+- The map is schematic and not geographically accurate.
+- Transportation content is simulated pressure/status information, not travel planning or departure data.
+- Multilingual support is a limited demonstration, not comprehensive localization.
+- Operational and announcement outputs are drafts requiring human review.
+- There is no user account, database, query history, persistent incident state, notification system, dispatch integration, or external operational connection.
+- Matchday Command is an independent prototype and is not affiliated with FIFA, tournament organizers, stadiums, transit agencies, municipalities, or emergency services.

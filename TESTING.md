@@ -1,89 +1,78 @@
-# Testing Plan & Guidelines
+# Testing and verification
 
-This document outlines the testing workflow for **Matchday Command**, addressing the **Testing (MEDIUM impact)** and **Code Quality (HIGH impact)** evaluation criteria.
+This document records the automated and manual verification workflow for Matchday Command. Product scope and the full evaluator evidence matrix live in [README.md](README.md).
 
----
+## Verified inventory
 
-## Automated Testing Suite
+Milestone 1B began from the verified checkpoint below:
 
-We use **Vitest** + **React Testing Library** for high-speed, non-watch DOM testing.
+| Suite | Test files | Tests |
+| --- | ---: | ---: |
+| Frontend | 14 | 74 |
+| Backend | 1 | 18 |
+| **Checkpoint total** | **15** | **92** |
 
-### Commands
+Dedicated Project Details coverage was added during Milestone 1B. The table below records the post-implementation `npm run check` result rather than treating 92 as a permanent count.
 
-#### Run Lint Checks
-Treats all Oxlint warnings as failures:
+Post-implementation Milestone 1B verification:
+
+| Suite | Test files | Tests |
+| --- | ---: | ---: |
+| Frontend | 15 | 77 |
+| Backend | 1 | 18 |
+| **Current verified total** | **16** | **95** |
+
+The final submission pass will re-run the suites and update these counts if later approved work changes them.
+
+## Commands
+
 ```bash
-npm run lint
+npm run lint        # Oxlint with warnings denied
+npm run build       # strict TypeScript project build and Vite production bundle
+npm run test        # frontend Vitest suite
+npm run test:server # backend Vitest/Supertest suite
+npm run test:all    # frontend and backend suites
+npm run check       # lint, build, and all tests
 ```
 
-#### Run the Full Quality Gate
-Runs linting, the production build, and all frontend and backend tests:
-```bash
-npm run check
-```
+## Major automated behaviors covered
 
-#### Run Unit & Integration Tests
-Runs the test suite once (non-interactive):
-```bash
-npm run test
-```
+- application navigation and persistent simulation messaging;
+- simulated venue-data invariants;
+- gate pressure, crowd density, accessibility, staffing, and priority calculations;
+- pointer and keyboard stadium-map interaction, including Enter, Space, and Escape;
+- deterministic Fan Assistant and Incident Support outputs and safety language;
+- cloud-success, timeout/network/server failure, malformed response, invalid schema, loading, disabled-state, and stale-request paths;
+- visible `Vertex AI via Cloud Run` and `Local deterministic fallback` source labels;
+- API client payload compaction, request limits, timeout handling, and response validation;
+- backend client initialization, health endpoint, CORS allowlist, field validation, body limit, prompt-injection rejection, rate limiting, structured output, and controlled failures;
+- Firebase Hosting rewrite order and cache rules;
+- Project Details product, architecture, links, build evidence, and limitation content.
 
-#### Run Backend API Tests
-Runs the backend API tests in the isolated `server/` directory:
-```bash
-npm run test:server
-```
+## External-service mocking
 
-#### Run All Tests (Frontend and Backend)
-Runs the complete frontend unit/integration test suite along with the backend API test suite:
-```bash
-npm run test:all
-```
+Automated tests do not call Firebase Hosting, Cloud Run, Vertex AI, or any other external cloud service.
 
-#### Local Vertex AI Integration Testing
-- **Automated tests**: Automated backend tests remain fully mocked and require no network access, ADC configuration, or active cloud credentials.
-- **Manual local testing**: To run the backend server locally and query the real Vertex AI service, you must authenticate your shell via:
-  ```bash
-  gcloud auth application-default login
-  ```
-  Ensure that `GOOGLE_CLOUD_PROJECT=matchday-command-2026` is exported in your environment.
+- Frontend API tests replace `fetch` with Vitest mocks or exercise deterministic failure behavior locally.
+- Backend tests replace `@google/genai` at the module boundary and inject generator functions into the Express application.
+- Backend HTTP behavior is exercised in process with Supertest.
 
-#### Perform Production Compile Check
-Runs the TypeScript type-checker (`tsc`) and Vite bundler to verify zero syntax, type, or asset compile errors:
-```bash
-npm run build
-```
+Real Vertex AI testing is a separate, manual activity requiring local ADC and explicit project configuration. It is not part of the automated suite.
 
----
+## Continuous integration gates
 
-## Manual Verification Checklist
+Both Firebase Hosting GitHub workflows use Node 22, install frontend and server dependencies with `npm ci`, and run `npm run check` before a live or preview Hosting deployment step. A failed lint, build, frontend test, or backend test prevents that workflow from reaching deployment.
 
-Before submission, the following verification checklist must be followed:
+## Manual production smoke-test checklist
 
-1. **Routing & Navigation:**
-   - [ ] Verify that clicking each tab in the navigation bar displays the correct section.
-   - [ ] Confirm the active tab receives the correct highlighted CSS styling.
-2. **Disclaimer Banner:**
-   - [ ] Verify that the simulated prototype banner renders clearly on all pages.
-   - [ ] Ensure the disclaimer is readable and contains appropriate warnings.
-3. **Data Rendering:**
-   - [ ] Confirm mock incidents, gate pressures, and transit wait times display correctly.
+Use the public application at <https://matchday-command-2026.web.app>:
 
----
-
-## Accessibility Audit Checklist
-
-Even though accessibility is labeled **LOW impact**, we target standard compliance:
-
-- [ ] **Tab Navigation:** Ensure users can navigate between header, navigation tabs, and cards using the `Tab` key.
-- [ ] **Focus Ring:** Visual outline must be present on active buttons/links.
-- [ ] **Screen Readers:** All semantic sections should have proper roles (e.g., `<main>`, `<header>`, `role="alert"`).
-- [ ] **Contrast Check:** Text elements must pass WCAG AA color contrast (at least 4.5:1 ratio).
-
----
-
-## Browser Compatibility & Brave Browser Note
-
-- Tests are designed to run in standard headless `jsdom` environments.
-- During local manual verification, ensure the web app operates correctly in standard modern browsers.
-- **Brave Browser Note:** If testing locally in Brave, please be aware that Brave's aggressive ad/tracker blocking ("Shields Up") may block local WebSocket sync connections or mock API calls. It is recommended to disable Shields for `localhost` during development or test using standard Chrome/Safari.
+1. Confirm the persistent simulated-prototype strip appears and the primary navigation works.
+2. Select a venue on Home, open Crowd Map, and confirm the selected snapshot carries through.
+3. On Crowd Map, Tab to a feature, select with Enter and Space, and clear with Escape.
+4. In Fan Assistant, submit a quick prompt and confirm the result shows a source label plus a simulation/limitation notice.
+5. Review Staff Command gate, crowd, transit-pressure, sustainability, accessibility, and incident panels as simulated snapshot information.
+6. In Incident Support, select an incident and confirm the output is labeled as Vertex AI or local fallback and described as a draft.
+7. Open Project Details and verify the product links, architecture flow, mode descriptions, Floodlit explanation, and limitations.
+8. Inspect Project Details at approximately 390 px, 768 px, and a standard laptop width; confirm readable headings, usable links, visible focus, and no horizontal page overflow.
+9. Confirm no page claims official access, continuously updating telemetry, real routing, transit departure information, automatic dispatch, or authorized announcements.

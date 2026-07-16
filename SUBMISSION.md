@@ -1,61 +1,44 @@
-# Challenge Submission Overview
+# Challenge submission overview
 
-This file serves as a reference document for the Build with AI 2026 Challenge submission details.
+## Public links
 
----
+- [Open the live Matchday Command application](https://matchday-command-2026.web.app)
+- [View the public Matchday Command repository](https://github.com/aviksh7/matchday-command)
 
-## Submission Links
+## Project
 
-- **GitHub Repository:** [Placeholder - Link to Public GitHub Repo]
-- **Live Deployed App:** [Placeholder - Link to Firebase Hosted Frontend]
-- **LinkedIn Post:** [Placeholder - Link to Submission LinkedIn Post]
+- **Name:** Matchday Command
+- **Tagline:** GenAI stadium operations and fan guidance for high-pressure tournament match days.
+- **Challenge vertical:** Stadium operations, fan navigation, accessibility, and crowd management.
+- **Problem:** High-pressure match days require clear fan guidance and coordinated operational decisions across crowd movement, accessibility needs, queues, transit pressure, volunteer coverage, and incident response.
 
----
+## Implemented solution
 
-## Project Executive Summary
+Fan Mode provides guidance grounded in a selected simulated venue snapshot. Operations Mode presents simulated operational panels and incident decision-support drafts. Two Vertex AI flows run through a Cloud Run Node.js API: Fan Assistant structured guidance and Incident Support structured drafts. Failed, timed-out, or invalid cloud responses use deterministic local browser logic, and the interface displays the response source.
 
-### Project Name
-Matchday Command
+Firebase Hosting serves the frontend and routes same-origin `/api/**` requests to Cloud Run. Cloud Run authenticates to Vertex AI with its attached service account and Application Default Credentials. The frontend contains no AI credential.
 
-### Tagline
-GenAI stadium operations and fan guidance for high-pressure tournament match days.
+The full architecture, challenge mapping, evidence, setup, and limitations are maintained in [README.md](README.md).
 
-### Vertical
-Stadium Operations, Fan Navigation, and Crowd Management.
+## Assumptions and limitations
 
----
+- All venue, crowd, incident, route, transit-pressure, and wait-time information is simulated.
+- The selected venue is a snapshot, not a continuously updating operational feed.
+- The map is schematic; transportation content is pressure/status information rather than travel or departure information.
+- Multilingual support is a limited demonstration and is not guaranteed translation coverage.
+- Operational recommendations, volunteer briefings, and announcement text are drafts requiring human review.
+- There is no user authentication, application database, persistent incident state, dispatch, notification, or external operational integration.
+- Users must not submit personal, confidential, medical, or emergency information to AI features.
+- Matchday Command is an independent prototype and is not affiliated with FIFA, tournament organizers, venue operators, transit agencies, municipalities, or emergency services.
 
-## Evaluator Priority Matrix
+## Evaluator smoke test
 
-This checklist tracks how each judging priority is handled in the final submission package:
+1. Open the live application and confirm the persistent simulated-prototype notice.
+2. Select a venue on Home and open its Crowd Map.
+3. Select map features with a pointer and keyboard; use Escape to clear.
+4. Run a Fan Assistant prompt and inspect the source and limitations labels.
+5. Review Staff Command as a selected simulated venue snapshot.
+6. Select an Incident Support item and inspect the structured draft and source label.
+7. Open Project Details for the concise product, architecture, resilience, design, evidence, and limitation summary.
 
-- [ ] **Google Service Usage (VERY HIGH):**
-  - AI-assisted development via Google Antigravity.
-  - Deployed on Firebase Hosting.
-  - Backend running on Google Cloud Run.
-  - Intelligently powered by Gemini API.
-- [ ] **Problem Statement Alignment (HIGH):**
-  - High-impact target focusing on matchday congestion, volunteer language translation, and crowd safety.
-- [ ] **Code Quality (HIGH):**
-  - Type-safe React + TypeScript.
-  - Clean modular structure.
-- [ ] **Security (MEDIUM):**
-  - Backend mediation for Gemini API (zero client keys exposed).
-- [ ] **Efficiency (MEDIUM):**
-  - Lightweight single-branch repo under 10 MB limit.
-- [ ] **Testing (MEDIUM):**
-  - Fully functioning Vitest assertions.
-- [ ] **Accessibility (LOW):**
-  - Keyboard nav and semantic HTML landmarks.
-
----
-
-## Final Submission Checklist
-
-Before final submission, verify:
-1. [ ] The GitHub repository is set to **Public**.
-2. [ ] There is **exactly one** active branch in the repository.
-3. [ ] Total repository size is strictly **under 10 MB** (no large media assets, PDFs, or videos committed).
-4. [ ] README.md clearly lists the simulated disclaimer and assumptions.
-5. [ ] The application compiles cleanly with `npm run build`.
-6. [ ] All unit tests pass with `npm run test`.
+Automated verification instructions and the latest test inventory are in [TESTING.md](TESTING.md). Security and privacy details are in [SECURITY.md](SECURITY.md).
