@@ -274,7 +274,7 @@ describe('Matchday Command API Endpoints', () => {
       expect(systemInstructionCaptured).not.toContain('GEMINI_API_KEY');
     });
 
-    it('instructs Vertex AI to respect explicitly requested translation languages within the existing schema', async () => {
+    it('requires every user-facing prose value to use an explicitly requested language within the existing schema', async () => {
       let promptCaptured = null;
       let systemInstructionCaptured = null;
       let responseSchemaCaptured = null;
@@ -298,9 +298,15 @@ describe('Matchday Command API Endpoints', () => {
         .expect(200);
 
       expect(promptCaptured).toContain('into French');
-      expect(systemInstructionCaptured).toContain('explicitly names one or more target languages');
-      expect(systemInstructionCaptured).toContain('using those target languages');
+      expect(systemInstructionCaptured).toContain('explicitly requests one or more target languages');
+      expect(systemInstructionCaptured).toContain('keep the JSON property names in English and the response schema unchanged');
+      expect(systemInstructionCaptured).toContain('write every user-facing prose value in the requested target language or languages');
+      expect(systemInstructionCaptured).toContain('"summary", "recommendedAction", "limitations"');
+      expect(systemInstructionCaptured).toContain('every "simulatedDataUsed" entry wherever it contains a prose label');
+      expect(systemInstructionCaptured).toContain('Preserve venue names, identifiers, quantities, percentages, and factual telemetry accurately');
+      expect(systemInstructionCaptured).toContain('Preserve the full simulation-grounding and limitation meaning');
       expect(systemInstructionCaptured).toContain('language coverage and translation accuracy are not guaranteed');
+      expect(systemInstructionCaptured).toContain('applies only to explicit translation or target-language requests');
       expect(responseSchemaCaptured.required).toEqual([
         'summary',
         'recommendedAction',
