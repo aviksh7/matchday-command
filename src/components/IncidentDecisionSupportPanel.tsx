@@ -63,7 +63,7 @@ export const IncidentDecisionSupportPanel: React.FC<IncidentDecisionSupportPanel
       <section className="card incident-panel incident-decision incident-decision--empty">
         <h3>Incident Details &amp; Decision Support</h3>
         <p>
-          Select an incident from the simulated log queue or configure a new custom ticket to inspect a simulated decision-support draft.
+          Select an incident from the simulated log queue or configure a new custom scenario to inspect a simulated decision-support draft.
         </p>
       </section>
     );
@@ -120,7 +120,7 @@ export const IncidentDecisionSupportPanel: React.FC<IncidentDecisionSupportPanel
       <div className="incident-decision__section">
         <h4>Related Simulated Operations Risks</h4>
         <ul>
-          {relatedRisks.map((risk) => <li key={risk}>{risk}</li>)}
+          {relatedRisks.map((risk, index) => <li key={`${index}-${risk}`}>{risk}</li>)}
         </ul>
       </div>
 

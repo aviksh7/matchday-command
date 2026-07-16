@@ -12,7 +12,7 @@ export const StaffPriorityPanel: React.FC<StaffPriorityPanelProps> = ({ recommen
     <section className="card staff-command__card staff-command__recommendations" aria-labelledby="staff-recommendations-heading">
       <h3 id="staff-recommendations-heading">Local Simulated Recommendations</h3>
       <ul className="staff-command__recommendation-list">
-        {recommendedActions.map(action => <li key={action}>{action}</li>)}
+        {recommendedActions.map((action, index) => <li key={`${index}-${action}`}>{action}</li>)}
       </ul>
     </section>
 

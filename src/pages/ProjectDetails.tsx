@@ -121,7 +121,7 @@ export const ProjectDetails: React.FC = () => {
           <div><dt>Runtime</dt><dd>Node 22</dd></div>
           <div><dt>Types</dt><dd>Strict TypeScript</dd></div>
           <div><dt>Lint</dt><dd>Zero-warning Oxlint</dd></div>
-          <div><dt>Automated tests</dt><dd>103 frontend / 19 backend / 122 total</dd></div>
+          <div><dt>Automated tests</dt><dd>105 frontend / 19 backend / 124 total</dd></div>
         </dl>
       </section>
 

@@ -179,19 +179,39 @@ const postValidatedJson = async <T>({
   abortSignal
 }: ValidatedPostOptions<T>): Promise<ApiClientResult<T>> => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  let internalTimerCausedAbort = false;
   const onExternalAbort = () => controller.abort();
   let externalAbortListenerAttached = false;
 
+  const createAbortFailure = () => createFailure(
+    'timeout',
+    internalTimerCausedAbort
+      ? 'Request timed out after 20 seconds. Using local fallback.'
+      : 'Request was cancelled. Using local fallback.'
+  );
+
   try {
     if (abortSignal?.aborted) {
-      return createFailure('timeout', 'Request cancelled or timed out. Using local fallback.');
+      return createAbortFailure();
     }
 
     if (abortSignal) {
       abortSignal.addEventListener('abort', onExternalAbort);
       externalAbortListenerAttached = true;
+
+      if (abortSignal.aborted) {
+        onExternalAbort();
+        return createAbortFailure();
+      }
     }
+
+    timeoutId = setTimeout(() => {
+      if (!controller.signal.aborted) {
+        internalTimerCausedAbort = true;
+        controller.abort();
+      }
+    }, REQUEST_TIMEOUT_MS);
 
     const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
       method: 'POST',
@@ -227,10 +247,7 @@ const postValidatedJson = async <T>({
     }
 
     if (controller.signal.aborted) {
-      return createFailure(
-        'timeout',
-        'Request timed out or was cancelled after 20 seconds. Using local fallback.'
-      );
+      return createAbortFailure();
     }
 
     if (!validateResponse(parsed)) {
@@ -247,10 +264,7 @@ const postValidatedJson = async <T>({
     };
   } catch (error: unknown) {
     if (controller.signal.aborted || isAbortError(error)) {
-      return createFailure(
-        'timeout',
-        'Request timed out or was cancelled after 20 seconds. Using local fallback.'
-      );
+      return createAbortFailure();
     }
 
     return createFailure(
@@ -258,7 +272,9 @@ const postValidatedJson = async <T>({
       'Network error or connection failure. Using local fallback.'
     );
   } finally {
-    clearTimeout(timeoutId);
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
     if (abortSignal && externalAbortListenerAttached) {
       abortSignal.removeEventListener('abort', onExternalAbort);
     }

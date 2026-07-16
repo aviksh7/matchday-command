@@ -481,7 +481,61 @@ describe('apiClient', () => {
       expect(result).toEqual({
         success: false,
         reason: 'timeout',
-        message: 'Request timed out or was cancelled after 20 seconds. Using local fallback.',
+        message: 'Request timed out after 20 seconds. Using local fallback.',
+        source: 'Local deterministic fallback'
+      });
+      signalHarness.expectCleanedUp();
+    });
+
+    it('handles an external abort immediately after listener attachment without starting fetch', async () => {
+      const controller = new AbortController();
+      const originalAddEventListener = controller.signal.addEventListener.bind(controller.signal);
+      const addEventListenerSpy = vi.spyOn(controller.signal, 'addEventListener').mockImplementation(
+        (type, listener, options) => {
+          originalAddEventListener(type, listener, options);
+          controller.abort();
+        }
+      );
+      const removeEventListenerSpy = vi.spyOn(controller.signal, 'removeEventListener');
+
+      const result = await postFanAssistant('Hello', mockVenue, controller.signal);
+
+      expect(result).toEqual({
+        success: false,
+        reason: 'timeout',
+        message: 'Request was cancelled. Using local fallback.',
+        source: 'Local deterministic fallback'
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(addEventListenerSpy).toHaveBeenCalledTimes(1);
+      expect(removeEventListenerSpy).toHaveBeenCalledTimes(1);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('propagates an external abort while fetch is pending', async () => {
+      const signalHarness = createExternalSignalHarness();
+      let internalSignal: AbortSignal | undefined;
+
+      fetchMock.mockImplementationOnce((_url: string, requestInit: RequestInit) => {
+        internalSignal = requestInit.signal as AbortSignal;
+        return new Promise((_resolve, reject) => {
+          internalSignal?.addEventListener('abort', () => reject(createAbortError()), { once: true });
+        });
+      });
+
+      const request = postFanAssistant('Hello', mockVenue, signalHarness.controller.signal);
+
+      expect(internalSignal?.aborted).toBe(false);
+      signalHarness.expectAttached();
+
+      signalHarness.controller.abort();
+      const result = await request;
+
+      expect(internalSignal?.aborted).toBe(true);
+      expect(result).toEqual({
+        success: false,
+        reason: 'timeout',
+        message: 'Request was cancelled. Using local fallback.',
         source: 'Local deterministic fallback'
       });
       signalHarness.expectCleanedUp();
@@ -522,7 +576,7 @@ describe('apiClient', () => {
       expect(result).toEqual({
         success: false,
         reason: 'timeout',
-        message: 'Request timed out or was cancelled after 20 seconds. Using local fallback.',
+        message: 'Request was cancelled. Using local fallback.',
         source: 'Local deterministic fallback'
       });
       signalHarness.expectCleanedUp();
@@ -539,7 +593,7 @@ describe('apiClient', () => {
       expect(result).toEqual({
         success: false,
         reason: 'timeout',
-        message: 'Request cancelled or timed out. Using local fallback.',
+        message: 'Request was cancelled. Using local fallback.',
         source: 'Local deterministic fallback'
       });
       expect(fetchMock).not.toHaveBeenCalled();

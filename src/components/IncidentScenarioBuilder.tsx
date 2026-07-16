@@ -35,7 +35,7 @@ export const IncidentScenarioBuilder: React.FC<IncidentScenarioBuilderProps> = (
   onSubmit,
 }) => (
   <section className="card incident-panel incident-scenario" aria-labelledby="incident-scenario-title">
-    <h3 id="incident-scenario-title">Local Incident Scenario Builder</h3>
+    <h3 id="incident-scenario-title">Simulated Incident Scenario Builder</h3>
     <p className="incident-panel__description">
       Create a custom mock incident to test a simulated decision-support draft.
     </p>

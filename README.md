@@ -76,7 +76,7 @@ These measures do not constitute a formal WCAG certification or guarantee compat
 
 ## Testing and quality gates
 
-The Attempt 2 submission candidate passes **103 frontend tests and 19 backend tests (122 total)**. Attempt 2 began at 80 frontend and 18 backend tests (98 total); [TESTING.md](TESTING.md) records both verified checkpoints and the covered behaviors.
+The Attempt 2 submission candidate passes **105 frontend tests and 19 backend tests (124 total)**. Attempt 2 began at 80 frontend and 18 backend tests (98 total); [TESTING.md](TESTING.md) records both verified checkpoints and the covered behaviors.
 
 The repository enforces:
 
@@ -132,8 +132,6 @@ npm run check
 ## Deployment overview
 
 The frontend is built into `dist/` and served by Firebase Hosting. `firebase.json` keeps the `/api/**` Cloud Run rewrite before the single-page-app fallback. The Node.js API is deployed separately to Cloud Run with `GOOGLE_CLOUD_PROJECT` and location supplied by deployment configuration, and it uses its attached runtime identity for Vertex AI access. The Hosting workflows run the full repository quality gate before live or preview deployment.
-
-No deployment is performed as part of this local Attempt 2 verification contract.
 
 ## Assumptions and limitations
 
