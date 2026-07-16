@@ -18,9 +18,9 @@ Submission-candidate verification:
 
 | Suite | Test files | Tests |
 | --- | ---: | ---: |
-| Frontend | 16 | 103 |
+| Frontend | 16 | 105 |
 | Backend | 1 | 19 |
-| **Current verified total** | **17** | **122** |
+| **Current verified total** | **17** | **124** |
 
 These tests run locally with cloud clients mocked; they are not evidence of a production-system call.
 
