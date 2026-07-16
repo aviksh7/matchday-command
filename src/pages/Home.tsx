@@ -1,218 +1,145 @@
 import React, { useState } from 'react';
 import { SIMULATED_VENUES } from '../data/mockData';
 import type { PageId } from '../types';
-import { 
-  calculateAverageGatePressure, 
-  getHighestPriorityIncidents, 
-  getOverallVenueStatus, 
-  summarizeAccessibilityRequests 
+import {
+  calculateAverageGatePressure,
+  getHighestPriorityIncidents,
+  getOverallVenueStatus,
+  summarizeAccessibilityRequests,
 } from '../logic/operations';
+import Button from '../components/Button';
+import FeedChip from '../components/FeedChip';
+import Icon from '../components/Icon';
+import SectionHeader from '../components/SectionHeader';
+import TelemetryRibbon, { type TelemetryItem } from '../components/TelemetryRibbon';
+import VenueTicket from '../components/VenueTicket';
 
 interface HomeProps {
   setCurrentPage: (page: PageId) => void;
+  openCrowdMap: (venueId?: string) => void;
 }
 
-export const Home: React.FC<HomeProps> = ({ setCurrentPage }) => {
+export const Home: React.FC<HomeProps> = ({ setCurrentPage, openCrowdMap }) => {
   const [selectedVenueId, setSelectedVenueId] = useState<string>(SIMULATED_VENUES[0].id);
+  const selectedVenue = SIMULATED_VENUES.find(venue => venue.id === selectedVenueId) ?? SIMULATED_VENUES[0];
 
-  const selectedVenue = SIMULATED_VENUES.find(v => v.id === selectedVenueId) || SIMULATED_VENUES[0];
-
-  const avgGatePressure = calculateAverageGatePressure(selectedVenue);
+  const averageGatePressure = calculateAverageGatePressure(selectedVenue);
   const priorityIncidents = getHighestPriorityIncidents(selectedVenue);
   const overallStatus = getOverallVenueStatus(selectedVenue);
-  const { pendingCount, activeCount } = summarizeAccessibilityRequests(selectedVenue);
+  const { pendingCount } = summarizeAccessibilityRequests(selectedVenue);
+  const openGateCount = selectedVenue.gates.filter(gate => gate.isOpen).length;
+  const highestTransitPressure = Math.max(...selectedVenue.transitStatus.map(transit => transit.crowdPressurePercentage));
 
-  const getStatusColorClass = (status: 'Normal' | 'Elevated' | 'Critical') => {
-    switch (status) {
-      case 'Critical': return 'status-critical';
-      case 'Elevated': return 'status-elevated';
-      default: return 'status-normal';
-    }
-  };
+  const telemetryItems: TelemetryItem[] = [
+    {
+      label: 'Gate intake',
+      value: `${averageGatePressure}%`,
+      detail: `${openGateCount}/${selectedVenue.gates.length} gates open`,
+      icon: 'venue',
+      tone: averageGatePressure >= 80 ? 'red' : averageGatePressure >= 50 ? 'amber' : 'green',
+    },
+    {
+      label: 'Active incidents',
+      value: String(priorityIncidents.length).padStart(2, '0'),
+      detail: priorityIncidents[0] ? `${priorityIncidents[0].severity} priority leads` : 'No unresolved reports',
+      icon: 'incident',
+      tone: priorityIncidents.some(incident => incident.severity === 'High') ? 'red' : 'amber',
+    },
+    {
+      label: 'Transit pressure',
+      value: `${highestTransitPressure}%`,
+      detail: 'Peak simulated node load',
+      icon: 'train',
+      tone: highestTransitPressure >= 80 ? 'red' : highestTransitPressure >= 50 ? 'amber' : 'green',
+    },
+    {
+      label: 'Access support',
+      value: String(pendingCount).padStart(2, '0'),
+      detail: 'Pending assistance requests',
+      icon: 'accessibility',
+      tone: pendingCount > 0 ? 'amber' : 'green',
+    },
+  ];
 
   return (
-    <div className="page-container">
-      <div className="home-hero">
-        <h2>Matchday Command</h2>
-        <p className="subtitle">GenAI stadium operations and fan guidance for high-pressure tournament match days.</p>
-      </div>
+    <div className="page-container home-page">
+      <section className="home-hero" aria-labelledby="home-hero-title">
+        <div className="home-hero__floodlight" aria-hidden="true" />
+        <svg className="home-hero__stadium" viewBox="0 0 760 520" aria-hidden="true">
+          <path d="M150 90 C270 25 490 25 610 90 C690 135 710 390 610 435 C490 500 270 500 150 435 C50 390 70 135 150 90Z" />
+          <path d="M205 130 C300 82 460 82 555 130 C625 170 640 350 555 395 C460 443 300 443 205 395 C120 350 135 170 205 130Z" />
+          <path d="M265 175 C330 145 430 145 495 175 C540 205 550 315 495 350 C430 380 330 380 265 350 C210 315 220 205 265 175Z" />
+          <rect x="315" y="210" width="130" height="95" rx="4" />
+          <line x1="380" y1="210" x2="380" y2="305" />
+          <circle cx="380" cy="257.5" r="17" />
+          <path d="M150 90 98 52M610 90l52-38M150 435l-52 38M610 435l52 38" />
+        </svg>
 
-      <div className="card venue-selector-card">
-        <label htmlFor="venue-select" style={{ fontWeight: 'bold', marginRight: '1rem' }}>Selected Venue View (Simulated):</label>
-        <select 
-          id="venue-select" 
-          value={selectedVenueId} 
-          onChange={(e) => setSelectedVenueId(e.target.value)}
-          style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '1rem' }}
-        >
-          {SIMULATED_VENUES.map(venue => (
-            <option key={venue.id} value={venue.id}>{venue.name} ({venue.locationName})</option>
-          ))}
-        </select>
-        
-        <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#eef2f7', borderRadius: '4px', fontSize: '0.9rem', color: '#4b5563' }}>
-          <strong>Simulation Disclaimer:</strong> {selectedVenue.simulationDisclaimer}
-        </div>
-      </div>
-
-      <div className="venue-overview-header" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h3>{selectedVenue.name} - Overview</h3>
-          <p style={{ margin: '0.2rem 0', color: '#5f6368' }}>
-            Location: <strong>{selectedVenue.locationName}</strong> | 
-            Simulated Capacity: <strong>{selectedVenue.simulatedCapacity.toLocaleString()}</strong>
-          </p>
-        </div>
-        <div className={`status-badge ${getStatusColorClass(overallStatus)}`} style={{ padding: '0.5rem 1rem', borderRadius: '20px', color: 'white', fontWeight: 'bold', textTransform: 'uppercase' }}>
-          Status: {overallStatus}
-        </div>
-      </div>
-
-      {/* Grid of 6 Status Cards */}
-      <div className="metrics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-        
-        {/* 1. Crowd Flow & Density */}
-        <div className="card metric-card">
-          <h4>Crowd Flow &amp; Density</h4>
-          <p>Overall Zone Occupancy:</p>
-          <div style={{ background: '#e5e7eb', height: '12px', borderRadius: '6px', margin: '0.5rem 0', overflow: 'hidden' }}>
-            <div style={{ 
-              background: selectedVenue.zones.some(z => z.density === 'Critical') ? '#db4437' : '#0f9d58', 
-              width: `${Math.round(selectedVenue.zones.reduce((sum, z) => sum + z.occupancyPercentage, 0) / selectedVenue.zones.length)}%`, 
-              height: '100%' 
-            }}></div>
+        <div className="home-hero__copy">
+          <FeedChip tone="cyan" icon="spark">Floodlit operations / Paper guidance</FeedChip>
+          <h2 id="home-hero-title">See the whole matchday.<br /><span className="home-hero__second-line">Move before <em>pressure</em> builds.</span></h2>
+          <p>GenAI stadium operations and fan guidance for high-pressure tournament match days—grounded in local simulated telemetry and designed for fast decisions.</p>
+          <div className="home-hero__actions">
+            <Button icon="map" trailingIcon="arrow-right" onClick={() => openCrowdMap()}>Open Crowd Map</Button>
+            <Button variant="secondary" icon="assistant" onClick={() => setCurrentPage('fan-assistant')}>Ask Fan Assistant</Button>
           </div>
-          <ul style={{ paddingLeft: '1.2rem', margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
-            {selectedVenue.zones.map(zone => (
-              <li key={zone.id}>
-                {zone.name}: <strong>{zone.density}</strong> ({zone.occupancyPercentage}%)
-              </li>
-            ))}
-          </ul>
         </div>
 
-        {/* 2. Gate Pressures */}
-        <div className="card metric-card">
-          <h4>Security Gates</h4>
-          <p>Average Intake Pressure: <strong>{avgGatePressure}%</strong></p>
-          <ul style={{ paddingLeft: '1.2rem', margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
-            {selectedVenue.gates.map(gate => (
-              <li key={gate.id}>
-                {gate.name}: <strong style={{ color: gate.pressure === 'High' ? '#db4437' : '#5f6368' }}>{gate.pressure}</strong> ({gate.percentage}%) {gate.isOpen ? '🟢' : '🔴'}
-              </li>
-            ))}
-          </ul>
+        <div className="home-hero__caption">
+          <span>Operations surface 01</span>
+          <strong>Local simulation snapshot</strong>
         </div>
+      </section>
 
-        {/* 3. Incidents Status */}
-        <div className="card metric-card">
-          <h4>Active Incidents</h4>
-          <p>Unresolved Reports: <strong>{priorityIncidents.length}</strong></p>
-          {priorityIncidents.length > 0 ? (
-            <ul style={{ paddingLeft: '1.2rem', margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
-              {priorityIncidents.slice(0, 2).map(inc => (
-                <li key={inc.id} style={{ marginBottom: '0.3rem' }}>
-                  <strong style={{ color: inc.severity === 'High' ? 'red' : 'orange' }}>[{inc.severity}]</strong> {inc.type} - <em>{inc.location}</em>
-                </li>
-              ))}
-              {priorityIncidents.length > 2 && <li style={{ color: '#888' }}>+ {priorityIncidents.length - 2} more incident(s)</li>}
-            </ul>
-          ) : (
-            <p style={{ color: 'green', fontSize: '0.9rem', margin: '0.5rem 0 0 0' }}>🟢 Zero active safety incidents reported.</p>
-          )}
+      <TelemetryRibbon items={telemetryItems} />
+
+      <VenueTicket
+        venue={selectedVenue}
+        venues={SIMULATED_VENUES}
+        status={overallStatus}
+        onVenueChange={setSelectedVenueId}
+        onOpenMap={() => openCrowdMap(selectedVenue.id)}
+      />
+
+      <p className="home-page__venue-disclaimer"><strong>Selected venue notice:</strong> {selectedVenue.simulationDisclaimer}</p>
+
+      <section className="mode-split" aria-labelledby="mode-split-title">
+        <div className="mode-split__intro">
+          <SectionHeader
+            eyebrow="Two operating perspectives"
+            title="One venue snapshot, built for the people moving through it."
+            description="Use the Paper surface for calm, readable fan guidance. Switch to Night when operational pressure and incident context need priority."
+          />
         </div>
+        <article className="mode-panel mode-panel--fan">
+          <div className="mode-panel__number">01 / FAN</div>
+          <Icon name="assistant" size={28} />
+          <h3>Guidance that reads clearly under pressure.</h3>
+          <p>Ask about gates, accessibility, lower-wait services, transit and sustainability using the existing Vertex AI / local fallback flow.</p>
+          <Button variant="paper" trailingIcon="arrow-right" onClick={() => setCurrentPage('fan-assistant')}>Launch Fan Mode</Button>
+        </article>
+        <article className="mode-panel mode-panel--ops">
+          <div className="mode-panel__number">02 / OPERATIONS</div>
+          <Icon name="operations" size={28} />
+          <h3>Pressure, incidents and movement in one command view.</h3>
+          <p>Review simulated gate loads, crowd density, staffing coverage and local incident decisions without connecting to external systems.</p>
+          <Button variant="secondary" trailingIcon="arrow-right" onClick={() => setCurrentPage('staff-command')}>Launch Staff/Ops Mode</Button>
+        </article>
+      </section>
 
-        {/* 4. Transit Status */}
-        <div className="card metric-card">
-          <h4>Transit Pressures</h4>
-          <p style={{ fontSize: '0.9rem', color: '#5f6368' }}>Simulated dispatch terminal flow status:</p>
-          <ul style={{ paddingLeft: '1.2rem', margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
-            {selectedVenue.transitStatus.map(t => (
-              <li key={t.id} style={{ marginBottom: '0.3rem' }}>
-                {t.type}: <strong>{t.status}</strong> <br />
-                <span style={{ color: '#888', fontSize: '0.8rem' }}>Crowd load: {t.crowdPressurePercentage}% ({t.loadLevel})</span>
-              </li>
-            ))}
-          </ul>
+      <section className="service-pipeline" aria-label="Application service pipeline">
+        <div className="service-pipeline__intro">
+          <FeedChip tone="green" icon="cloud">Google service path</FeedChip>
+          <h3>Prototype delivery and intelligence</h3>
         </div>
-
-        {/* 5. Accessibility Requests */}
-        <div className="card metric-card">
-          <h4>Accessibility Summary</h4>
-          <p>Pending Support Tickets: <strong style={{ color: pendingCount > 0 ? '#f4b400' : 'inherit' }}>{pendingCount}</strong></p>
-          <p>Active In-Progress: <strong>{activeCount}</strong></p>
-          {selectedVenue.accessibilityRequests.length > 0 ? (
-            <ul style={{ paddingLeft: '1.2rem', margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
-              {selectedVenue.accessibilityRequests.filter(r => r.status !== 'Resolved').slice(0, 2).map(req => (
-                <li key={req.id}>
-                  {req.type} - <span style={{ fontStyle: 'italic' }}>{req.location}</span> ({req.status})
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p style={{ color: 'green', fontSize: '0.9rem', margin: '0.5rem 0 0 0' }}>🟢 All mobility assistance requests cleared.</p>
-          )}
+        <div className="service-pipeline__steps">
+          <div><span>01</span><Icon name="venue" size={20} /><strong>Firebase Hosting</strong><small>Static React frontend</small></div>
+          <i aria-hidden="true">→</i>
+          <div><span>02</span><Icon name="route" size={20} /><strong>Cloud Run</strong><small>Server-side API mediation</small></div>
+          <i aria-hidden="true">→</i>
+          <div><span>03</span><Icon name="spark" size={20} /><strong>Vertex AI</strong><small>Grounded text guidance</small></div>
         </div>
-
-        {/* 6. Sustainability Signals */}
-        <div className="card metric-card">
-          <h4>Sustainability Signals</h4>
-          <ul style={{ paddingLeft: '1.2rem', margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
-            <li style={{ marginBottom: '0.4rem' }}>
-              Refill Station Load: <strong>{selectedVenue.sustainability.waterRefillStationLoadPercentage}%</strong>
-            </li>
-            <li style={{ marginBottom: '0.4rem' }}>
-              Waste Sorting Status: <strong>{selectedVenue.sustainability.wasteSortingCompliancePercentage}% Compliance</strong>
-            </li>
-            <li>
-              Transit Encouragement: <strong>{selectedVenue.sustainability.greenTransitEncouragementPercentage}% Green Transport Usage</strong>
-            </li>
-          </ul>
-        </div>
-
-      </div>
-
-      {/* Mode Navigation Action Panel */}
-      <div className="card action-panel-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '2rem', textAlign: 'center' }}>
-        <h3>Matchday Mode Selector</h3>
-        <p style={{ maxWidth: '600px', color: '#4b5563', marginBottom: '1.5rem' }}>
-          Toggle views below to access public fan resources (multilingual chat, accessibility routings) or private staff metrics (AI action dispatcher, volunteer rosters).
-        </p>
-        <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <button 
-            onClick={() => setCurrentPage('fan-assistant')}
-            style={{ 
-              background: '#0f9d58', 
-              color: 'white', 
-              border: 'none', 
-              padding: '0.75rem 1.5rem', 
-              fontSize: '1rem', 
-              fontWeight: 'bold', 
-              borderRadius: '6px', 
-              cursor: 'pointer',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-            }}
-          >
-            Launch Fan Mode
-          </button>
-          <button 
-            onClick={() => setCurrentPage('staff-command')}
-            style={{ 
-              background: '#1a73e8', 
-              color: 'white', 
-              border: 'none', 
-              padding: '0.75rem 1.5rem', 
-              fontSize: '1rem', 
-              fontWeight: 'bold', 
-              borderRadius: '6px', 
-              cursor: 'pointer',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-            }}
-          >
-            Launch Staff/Ops Mode
-          </button>
-        </div>
-      </div>
+      </section>
     </div>
   );
 };

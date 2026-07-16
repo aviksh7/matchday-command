@@ -7,6 +7,7 @@ import {
 import type { VenueData, IncidentData } from '../types';
 import { postIncidentSupport } from '../logic/apiClient';
 import type { IncidentSupportApiResponse, ResponseSource } from '../logic/apiClient';
+import Icon from '../components/Icon';
 
 interface CachedApiResult {
   incidentId: string;
@@ -410,7 +411,7 @@ export const IncidentSupport: React.FC = () => {
                       color: '#64748b',
                       border: '1px solid #cbd5e1'
                     }} role="status" aria-live="polite">
-                      ⏳ Generating Vertex AI guidance via Cloud Run...
+                      <span className="inline-icon-label"><Icon name="spark" size={14} />Generating Vertex AI guidance via Cloud Run...</span>
                     </span>
                   ) : (
                     <span style={{

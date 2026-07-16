@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import CrowdMap from '../pages/CrowdMap';
+import { SIMULATED_VENUES } from '../data/mockData';
 
 describe('Crowd Map UI Dashboard Component', () => {
   it('renders the Crowd Map header and selector', () => {
@@ -40,12 +41,48 @@ describe('Crowd Map UI Dashboard Component', () => {
     expect(selectDropdown).toBeInTheDocument();
 
     // Default venue is Toronto. Check for Toronto-specific details
-    expect(screen.getByText(/Toronto Stadium Demo/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Toronto Stadium Demo/i).length).toBeGreaterThan(0);
     
     // Select Mexico City Stadium Demo
     fireEvent.change(selectDropdown, { target: { value: 'mexico-demo' } });
 
     // Verify view has updated to Mexico City
     expect(screen.getAllByText(/Lower Ring/i).length).toBeGreaterThan(0);
+  });
+
+  it('selects a map district with a pointer and updates the context panel', () => {
+    render(<CrowdMap />);
+
+    fireEvent.click(screen.getByRole('button', { name: /North Concourse district/i }));
+
+    expect(screen.getByRole('heading', { level: 3, name: 'North Concourse' })).toBeInTheDocument();
+    expect(screen.getByRole('meter', { name: 'Simulated occupancy' })).toHaveAttribute('aria-valuenow', '55');
+  });
+
+  it('supports Enter and Space map selection plus Escape to clear', () => {
+    render(<CrowdMap />);
+
+    const southDistrict = screen.getByRole('button', { name: /South Concourse district/i });
+    fireEvent.keyDown(southDistrict, { key: 'Enter' });
+    expect(screen.getByRole('heading', { level: 3, name: 'South Concourse' })).toBeInTheDocument();
+
+    const gate = screen.getByRole('button', { name: /Gate A \(Main\) gate/i });
+    fireEvent.keyDown(gate, { key: ' ' });
+    expect(screen.getByRole('heading', { level: 3, name: 'Gate A (Main)' })).toBeInTheDocument();
+
+    fireEvent.keyDown(gate, { key: 'Escape' });
+    expect(screen.getByRole('heading', { level: 3, name: SIMULATED_VENUES[0].name })).toBeInTheDocument();
+  });
+
+  it('opens incident details and accurately navigates to Incident Support without promising preselection', () => {
+    const onOpenIncidentSupport = vi.fn();
+    render(<CrowdMap onOpenIncidentSupport={onOpenIncidentSupport} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Incident INC-201/i }));
+    expect(screen.getByRole('heading', { level: 3, name: 'Spill Hazard' })).toBeInTheDocument();
+    expect(screen.getByText(/will open without preselecting this incident/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Incident Support' }));
+    expect(onOpenIncidentSupport).toHaveBeenCalledTimes(1);
   });
 });

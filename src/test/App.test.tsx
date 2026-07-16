@@ -18,6 +18,32 @@ describe('Matchday Command Base Application', () => {
     fireEvent.click(fanAssistantTab);
     
     // Confirm the Fan Assistant heading renders
-    expect(screen.getByRole('heading', { level: 3, name: 'Fan Operations Assistant' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Fan Operations Assistant' })).toBeInTheDocument();
+  });
+
+  it('renders the persistent simulation strip', () => {
+    render(<App />);
+    expect(screen.getByText(/SIMULATED PROTOTYPE — venue, crowd, transit and incident data are simulated/i)).toBeInTheDocument();
+    expect(screen.getByText(/No external operational systems are connected/i)).toBeInTheDocument();
+  });
+
+  it('navigates from the homepage CTAs to Crowd Map and Fan Assistant', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Crowd Map' }));
+    expect(screen.getByRole('heading', { level: 2, name: 'Simulated Venue Operations Map' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ask Fan Assistant' }));
+    expect(screen.getByRole('heading', { level: 2, name: 'Fan Operations Assistant' })).toBeInTheDocument();
+  });
+
+  it('hands the selected homepage venue to Crowd Map without synchronizing page state globally', () => {
+    render(<App />);
+
+    fireEvent.change(screen.getByLabelText('Venue view'), { target: { value: 'mexico-demo' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Open this venue map' }));
+
+    expect(screen.getByLabelText(/Select Venue View/i)).toHaveValue('mexico-demo');
   });
 });

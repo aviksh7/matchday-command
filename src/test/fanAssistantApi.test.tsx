@@ -18,7 +18,7 @@ describe('Fan Assistant API Integration & Fallback Flow', () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        summary: 'Cloud Run Vertex AI guidance answer.',
+        summary: 'Cloud Run **Vertex AI** guidance answer.',
         recommendedAction: 'Dispatch concourse team.',
         simulatedDataUsed: ['Gate A Pressure 88%'],
         limitations: 'Simulated data only.'
@@ -27,11 +27,15 @@ describe('Fan Assistant API Integration & Fallback Flow', () => {
 
     render(<FanAssistant />);
 
+    expect(screen.getByText(/prototype for the Toronto Stadium Demo console/i)).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent('**Toronto Stadium Demo**');
+
     const quickPrompt = screen.getByText(/Find the least crowded gate/i);
     fireEvent.click(quickPrompt);
 
     await waitFor(() => {
-      expect(screen.getByText('Cloud Run Vertex AI guidance answer.')).toBeInTheDocument();
+      expect(screen.getByText((_, element) => element?.tagName === 'P' && element.textContent === 'Cloud Run Vertex AI guidance answer.')).toBeInTheDocument();
+      expect(screen.getByText('Vertex AI', { selector: 'strong' })).toBeInTheDocument();
       expect(screen.getByText('Dispatch concourse team.')).toBeInTheDocument();
       expect(screen.getByText(/Vertex AI via Cloud Run/i)).toBeInTheDocument();
     });
