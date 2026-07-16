@@ -1,5 +1,6 @@
 import React from 'react';
 import Meter from './Meter';
+import StaffServiceQueuePressure from './StaffServiceQueuePressure';
 import StatusChip from './StatusChip';
 import type { VenueData, ZoneData } from '../types';
 
@@ -67,6 +68,8 @@ export const StaffTelemetryPanel: React.FC<StaffTelemetryPanelProps> = ({
       </div>
     </section>
 
+    <StaffServiceQueuePressure venueName={venue.name} services={venue.concessions} />
+
     <section className="card staff-command__card" aria-labelledby="staff-crowd-flow-heading">
       <h3 id="staff-crowd-flow-heading">Simulated Crowd &amp; Volunteer Flow</h3>
 
@@ -113,7 +116,7 @@ export const StaffTelemetryPanel: React.FC<StaffTelemetryPanelProps> = ({
         ))}
       </ul>
 
-      <h4>Sustainability telemetry</h4>
+      <h4>Simulated sustainability indicators</h4>
       <dl className="staff-command__sustainability-list">
         <div>
           <dt>Water Station Refill Load</dt>
@@ -124,7 +127,7 @@ export const StaffTelemetryPanel: React.FC<StaffTelemetryPanelProps> = ({
           <dd>{venue.sustainability.wasteSortingCompliancePercentage}%</dd>
         </div>
         <div>
-          <dt>Green Transit Usage</dt>
+          <dt>Green Transit Encouragement Indicator</dt>
           <dd>{venue.sustainability.greenTransitEncouragementPercentage}%</dd>
         </div>
       </dl>

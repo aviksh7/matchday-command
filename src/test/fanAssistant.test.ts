@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getSimulatedAssistantResponse } from '../logic/fanAssistant';
+import { getSimulatedAssistantResponse, SIMULATED_VENUE_ANNOUNCEMENT } from '../logic/fanAssistant';
 import type { VenueData } from '../types';
 
 const mockTestVenue: VenueData = {
@@ -42,6 +42,17 @@ describe('Simulated Fan Assistant Response Logic', () => {
     const response = getSimulatedAssistantResponse('transit-pressures', null, mockTestVenue);
     expect(response.telemetryUsed).toContain('Train Terminal');
     expect(response.telemetryUsed).toContain('25%');
+    expect(response.action).not.toMatch(/avoid departure delays/i);
+    expect(response.action).toMatch(/posted transit signs|transit staff/i);
+  });
+
+  it('labels sustainability values as simulated indicators rather than measured impact', () => {
+    const response = getSimulatedAssistantResponse('sustainability-tips', null, mockTestVenue);
+    const responseText = `${response.answer} ${response.action} ${response.telemetryUsed} ${response.disclaimer}`;
+
+    expect(response.telemetryUsed).toContain('green-transit encouragement');
+    expect(responseText).not.toContain('green transport usage');
+    expect(responseText).toMatch(/not measurements of environmental impact|no live facility feed/i);
   });
 
   it('includes a prototype safety disclaimer on every response type', () => {
@@ -94,5 +105,19 @@ describe('Simulated Fan Assistant Response Logic', () => {
 
     const wheelchairResponse = getSimulatedAssistantResponse('custom', 'is there a wheelchair path?', mockTestVenue);
     expect(wheelchairResponse.answer).toContain('Gate 2'); // Gate 2 is accessibleReady
+  });
+
+  it('uses the shared simulated announcement and clearly limits deterministic translation', () => {
+    const response = getSimulatedAssistantResponse('translate-announcement', null, mockTestVenue);
+    const responseText = `${response.answer} ${response.action} ${response.telemetryUsed} ${response.disclaimer}`;
+
+    expect(response.answer).toContain(SIMULATED_VENUE_ANNOUNCEMENT);
+    expect(response.answer).toContain('Spanish');
+    expect(response.answer).toContain('French');
+    expect(responseText).not.toMatch(/placeholder/i);
+    expect(responseText).toMatch(/translation demonstration/i);
+    expect(responseText).toMatch(/language coverage/i);
+    expect(responseText).toMatch(/accuracy (?:is|are) not guaranteed/i);
+    expect(responseText).toMatch(/fallback (?:cannot|is limited)/i);
   });
 });

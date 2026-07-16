@@ -79,7 +79,7 @@ describe('Incident Support UI Dashboard Component', () => {
     const typeSelect = screen.getByLabelText(/Incident Type:/i);
     const locationInput = screen.getByLabelText(/Location:/i);
     const severitySelect = screen.getByLabelText(/Severity Level:/i);
-    const submitButton = screen.getByRole('button', { name: /Generate Local Simulated Plan/i });
+    const submitButton = screen.getByRole('button', { name: /Generate Simulated Decision-Support Draft/i });
 
     expect(typeSelect).toBeInTheDocument();
     expect(locationInput).toBeInTheDocument();
@@ -104,6 +104,12 @@ describe('Incident Support UI Dashboard Component', () => {
     expect(screen.getAllByText(/Guest Health Support Request/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/simulated North Concourse Sec 108/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/simulated severity level High/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { level: 4, name: /Decision-Support Limitations/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/qualified human review|review by qualified people/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/does not dispatch staff/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/publish announcements/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/official authority/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole('group', { name: /Local Status/i })).toHaveAttribute('aria-describedby', 'incident-status-note');
   });
 
   it('ensures no visible UI elements claim live, real-time, official, emergency, ticketing, or API access', () => {

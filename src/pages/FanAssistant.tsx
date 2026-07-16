@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SIMULATED_VENUES } from '../data/mockData';
-import { getSimulatedAssistantResponse } from '../logic/fanAssistant';
+import { getSimulatedAssistantResponse, SIMULATED_VENUE_ANNOUNCEMENT } from '../logic/fanAssistant';
 import type { AssistantPromptKey } from '../logic/fanAssistant';
 import type { AssistantResponse } from '../types';
 import { postFanAssistant } from '../logic/apiClient';
@@ -29,7 +29,12 @@ const QUICK_COMMANDS: Array<{
   { key: 'accessible-guidance', query: 'Get accessible route guidance', label: 'Get accessibility guidance', icon: 'accessibility' },
   { key: 'transit-pressures', query: 'Get post-match transit guidance', label: 'Get transit pressures status', icon: 'train' },
   { key: 'sustainability-tips', query: 'Get sustainability tip', label: 'Get sustainability tips', icon: 'water' },
-  { key: 'translate-announcement', query: 'Translate announcement placeholder', label: 'Translate PA announcements', icon: 'assistant' },
+  {
+    key: 'translate-announcement',
+    query: `Translate this simulated venue announcement into Spanish and French: "${SIMULATED_VENUE_ANNOUNCEMENT}"`,
+    label: 'Demo Spanish/French translation',
+    icon: 'assistant'
+  },
 ];
 
 const renderEmphasis = (text: string): React.ReactNode[] => {
@@ -289,6 +294,7 @@ export const FanAssistant: React.FC = () => {
                 key={command.key}
                 onClick={() => handlePromptClick(command.key, command.query)}
                 disabled={isLoading}
+                aria-describedby={command.key === 'translate-announcement' ? 'fan-translation-limitations' : undefined}
               >
                 <span className="fan-quick-command__number">{String(index + 1).padStart(2, '0')}</span>
                 <Icon name={command.icon} size={16} />
@@ -296,7 +302,9 @@ export const FanAssistant: React.FC = () => {
               </button>
             ))}
           </div>
-          <p className="fan-quick-commands__disclaimer">This assistant uses simulated telemetry only — no external systems.</p>
+          <p className="fan-quick-commands__disclaimer" id="fan-translation-limitations">
+            This assistant uses simulated telemetry only; it has no external-system access. Translation is a limited demonstration with no language-coverage or accuracy guarantee. Local fallback is limited to the fixed Spanish/French announcement sample.
+          </p>
         </aside>
 
         <form className="fan-composer" onSubmit={handleCustomSubmit}>

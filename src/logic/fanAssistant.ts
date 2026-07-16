@@ -8,6 +8,9 @@ export type AssistantPromptKey =
   | 'sustainability-tips'
   | 'translate-announcement';
 
+export const SIMULATED_VENUE_ANNOUNCEMENT =
+  'Attention fans: Please walk on the concourse ramps, move slowly, and keep the marked wheelchair lanes clear.';
+
 /**
  * Local simulated response engine. Computes responses using mock venue telemetry data.
  * All responses are clearly marked as simulated and prototype-only.
@@ -130,7 +133,7 @@ export const getSimulatedAssistantResponse = (
 
       return {
         answer: `Simulated transit monitoring indicates that the ${lowestPressure.type} is operating with the lowest crowd pressure (${lowestPressure.crowdPressurePercentage}% load, status: ${lowestPressure.status}). The ${highestPressure.type} is showing high pressure (${highestPressure.crowdPressurePercentage}% load).`,
-        action: `To avoid departure delays, we recommend routing via the ${lowestPressure.type} if it aligns with your travel plans.`,
+        action: `If it suits your plans, consider the ${lowestPressure.type} to reduce exposure to higher simulated crowd pressure. Confirm actual service and departure information on posted transit signs or with transit staff.`,
         telemetryUsed: `Simulated transit statuses: ${venue.transitStatus.map(t => `${t.type} (${t.status}, ${t.crowdPressurePercentage}% pressure)`).join(', ')}.`,
         disclaimer: `Simulated transit data. Not connected to real municipal transit feeds, current transit timetables, or GPS mapping services.`
       };
@@ -139,22 +142,21 @@ export const getSimulatedAssistantResponse = (
     case 'sustainability-tips': {
       const metrics = venue.sustainability;
       return {
-        answer: `Simulated green metrics indicate water refill stations are operating at a ${metrics.waterRefillStationLoadPercentage}% load level, and waste sorting stations are showing a ${metrics.wasteSortingCompliancePercentage}% sorting compliance rate.`,
-        action: `Bring a reusable container and locate a refill station. Thank you for participating in the recycling scheme, currently showing ${metrics.wasteSortingCompliancePercentage}% sorting compliance!`,
-        telemetryUsed: `Simulated sustainability telemetry: Refill stations (${metrics.waterRefillStationLoadPercentage}%), sorting compliance (${metrics.wasteSortingCompliancePercentage}%), green transport usage (${metrics.greenTransitEncouragementPercentage}%).`,
-        disclaimer: `Simulated sustainability feedback for demonstration purposes only.`
+        answer: `The local prototype snapshot assigns water refill stations a simulated ${metrics.waterRefillStationLoadPercentage}% load indicator and waste sorting a simulated ${metrics.wasteSortingCompliancePercentage}% compliance indicator.`,
+        action: `Use refill and sorting facilities where available. These prototype indicators are guidance cues, not measurements of environmental impact.`,
+        telemetryUsed: `Simulated sustainability indicators: refill station load (${metrics.waterRefillStationLoadPercentage}%), sorting compliance (${metrics.wasteSortingCompliancePercentage}%), green-transit encouragement (${metrics.greenTransitEncouragementPercentage}%).`,
+        disclaimer: `Simulated sustainability guidance for demonstration only. No live facility feed or measured environmental impact is available.`
       };
     }
 
     case 'translate-announcement': {
-      const sampleAnnouncement = `Attention fans, please do not run on the concourse ramps. Proceed slowly and yield to wheelchair lanes.`;
       return {
-        answer: `Simulated Multilingual Translation Placeholder for PA announcement ("${sampleAnnouncement}"):
-• Spanish: "Atención aficionados, por favor no corran en las rampas del corredor. Procedan despacio y cedan el paso a los carriles de sillas de ruedas."
-• French: "Attention aux supporters, veuillez ne pas courir sur les rampes du hall. Procédez lentement et cédez le passage aux voies pour fauteuils roulants."`,
-        action: `This is a prototype translation placeholder. When connected to the network, this action is processed by the server-side Vertex AI API on Google Cloud Run to translate sample announcement text, with deterministic local simulation as the offline fallback.`,
-        telemetryUsed: `Static PA announcement template template_01.`,
-        disclaimer: `Simulated translation placeholder. Does not guarantee real translation accuracy or connect to public address systems.`
+        answer: `Limited deterministic translation demonstration for this simulated venue announcement ("${SIMULATED_VENUE_ANNOUNCEMENT}"):
+• Spanish: "Atención, aficionados: caminen por las rampas del vestíbulo, avancen despacio y mantengan despejados los carriles señalizados para sillas de ruedas."
+• French: "Supporters, attention : marchez sur les rampes du hall, avancez lentement et laissez dégagées les voies signalées pour les fauteuils roulants."`,
+        action: `Review this fixed Spanish and French sample with a qualified language reviewer before use. The local fallback cannot translate other text or languages and does not publish announcements.`,
+        telemetryUsed: `Fixed simulated venue announcement; local fallback sample languages: Spanish and French.`,
+        disclaimer: `Simulated translation demonstration only. Language coverage and translation accuracy are not guaranteed. The deterministic fallback is limited to this fixed announcement in Spanish and French and is not connected to public-address systems.`
       };
     }
 

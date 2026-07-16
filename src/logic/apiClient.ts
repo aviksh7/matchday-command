@@ -113,11 +113,14 @@ export const buildCompactContext = (venue: VenueData): Record<string, unknown> =
   id: venue.id,
   name: venue.name,
   gates: venue.gates ? venue.gates.map(g => ({ name: g.name, pressure: g.pressure, percentage: g.percentage, isOpen: g.isOpen, accessibleReady: g.accessibleReady })) : [],
-  zones: venue.zones ? venue.zones.map(z => ({ name: z.name, density: z.density, occupancyPercentage: z.occupancyPercentage })) : [],
+  zones: venue.zones ? venue.zones.map(z => ({ name: z.name, density: z.density, occupancyPercentage: z.occupancyPercentage, volunteerCount: z.volunteerCount })) : [],
   concessions: venue.concessions ? venue.concessions.map(c => ({ name: c.name, type: c.type, waitTimeMinutes: c.waitTimeMinutes, isAccessible: c.isAccessible })) : [],
+  accessibilitySupportRequests: venue.accessibilityRequests
+    ? venue.accessibilityRequests.map(request => ({ type: request.type, location: request.location, status: request.status }))
+    : [],
   transitStatus: venue.transitStatus ? venue.transitStatus.map(t => ({ type: t.type, status: t.status, crowdPressurePercentage: t.crowdPressurePercentage, loadLevel: t.loadLevel })) : [],
   sustainability: venue.sustainability || {},
-  activeIncidentsCount: venue.incidents ? venue.incidents.length : 0
+  unresolvedIncidentCount: venue.incidents ? venue.incidents.filter(incident => incident.status !== 'Resolved').length : 0
 });
 
 /**

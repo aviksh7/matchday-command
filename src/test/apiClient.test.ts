@@ -9,6 +9,7 @@ import {
   buildCompactIncident,
   buildCompactContext
 } from '../logic/apiClient';
+import { SIMULATED_VENUES } from '../data/mockData';
 import type { VenueData, IncidentData } from '../types';
 
 describe('apiClient', () => {
@@ -120,6 +121,80 @@ describe('apiClient', () => {
         severity: 'Medium',
         status: 'Open'
       });
+    });
+
+    it('buildCompactContext should include simulated support and volunteer grounding while counting only unresolved incidents', () => {
+      const groundedVenue: VenueData = {
+        ...mockVenue,
+        zones: [
+          { id: 'zone-1', name: 'North Concourse', density: 'High', occupancyPercentage: 76, volunteerCount: 7 }
+        ],
+        accessibilityRequests: [
+          { id: 'acc-internal-1', type: 'Wheelchair Assistance', location: 'Gate A', status: 'Pending', timestamp: '12:05' },
+          { id: 'acc-internal-2', type: 'Sensory Room Request', location: 'Section 114', status: 'Resolved', timestamp: '11:45' }
+        ],
+        incidents: [
+          mockIncident,
+          { ...mockIncident, id: 'INC-2', status: 'Dispatched' },
+          { ...mockIncident, id: 'INC-3', status: 'Resolved' }
+        ]
+      };
+
+      const compact = buildCompactContext(groundedVenue);
+      expect(compact.zones).toEqual([
+        { name: 'North Concourse', density: 'High', occupancyPercentage: 76, volunteerCount: 7 }
+      ]);
+      expect(compact.accessibilitySupportRequests).toEqual([
+        { type: 'Wheelchair Assistance', location: 'Gate A', status: 'Pending' },
+        { type: 'Sensory Room Request', location: 'Section 114', status: 'Resolved' }
+      ]);
+      expect(compact.unresolvedIncidentCount).toBe(2);
+      expect(compact).not.toHaveProperty('activeIncidentsCount');
+
+      const serialized = JSON.stringify(compact);
+      expect(serialized).not.toContain('acc-internal');
+      expect(serialized).not.toContain('12:05');
+    });
+
+    it('keeps compact real-fixture requests comfortably below current server payload limits', () => {
+      for (const venue of SIMULATED_VENUES) {
+        const compactVenue = buildCompactVenue(venue);
+        const compactContext = buildCompactContext(venue);
+        const compactIncident = buildCompactIncident(venue.incidents[0] || mockIncident);
+        const userQuery = 'Where is the lowest-pressure accessible route?';
+
+        const venueSize = JSON.stringify(compactVenue).length;
+        const contextSize = JSON.stringify(compactContext).length;
+        const incidentSize = JSON.stringify(compactIncident).length;
+        const fanRequestSize = JSON.stringify({
+          userQuery,
+          venue: compactVenue,
+          simulatedVenueContext: compactContext
+        }).length;
+        const incidentRequestSize = JSON.stringify({
+          incident: compactIncident,
+          venue: compactVenue,
+          simulatedVenueContext: compactContext
+        }).length;
+
+        expect(venueSize).toBeLessThan(1000);
+        expect(contextSize).toBeLessThan(4000);
+        expect(incidentSize).toBeLessThan(1000);
+        expect(fanRequestSize).toBeLessThan(9000);
+        expect(incidentRequestSize).toBeLessThan(9000);
+        expect(validatePayloadLimits({
+          field1: userQuery,
+          field1MaxLen: 500,
+          venue: compactVenue,
+          context: compactContext
+        }).valid).toBe(true);
+        expect(validatePayloadLimits({
+          field1: compactIncident,
+          field1MaxLen: 1000,
+          venue: compactVenue,
+          context: compactContext
+        }).valid).toBe(true);
+      }
     });
 
     it('validatePayloadLimits should return valid for normal payloads', () => {

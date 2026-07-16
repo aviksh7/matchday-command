@@ -37,7 +37,7 @@ export const IncidentScenarioBuilder: React.FC<IncidentScenarioBuilderProps> = (
   <section className="card incident-panel incident-scenario" aria-labelledby="incident-scenario-title">
     <h3 id="incident-scenario-title">Local Incident Scenario Builder</h3>
     <p className="incident-panel__description">
-      Create a custom mock incident to test local fallback response plan calculation.
+      Create a custom mock incident to test a simulated decision-support draft.
     </p>
 
     <form className="incident-scenario__form" onSubmit={onSubmit}>
@@ -80,7 +80,7 @@ export const IncidentScenarioBuilder: React.FC<IncidentScenarioBuilderProps> = (
       </div>
 
       <Button type="submit" variant="paper" className="incident-scenario__submit" disabled={isLoading}>
-        Generate Local Simulated Plan
+        Generate Simulated Decision-Support Draft
       </Button>
     </form>
   </section>

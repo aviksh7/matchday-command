@@ -19,6 +19,11 @@ interface CachedApiResult {
   reasonText?: string;
 }
 
+const LOCAL_INCIDENT_LIMITATIONS = [
+  'Simulated prototype data only.',
+  'The deterministic fallback is limited to this local venue snapshot and cannot verify conditions or replace trained staff.'
+].join(' ');
+
 const normalizeLocalSummary = (summary: ReturnType<typeof getIncidentSupportSummary>): IncidentSupportApiResponse => ({
   situationSummary: summary.situationSummary,
   priorityLevel: summary.priorityLevel,
@@ -28,7 +33,7 @@ const normalizeLocalSummary = (summary: ReturnType<typeof getIncidentSupportSumm
   accessibilityNote: summary.accessibilityNote,
   crowdTransitNote: summary.transitNote,
   simulatedDataUsed: Array.isArray(summary.telemetryUsed) ? summary.telemetryUsed : [summary.telemetryUsed],
-  limitations: 'Simulated prototype data only.'
+  limitations: LOCAL_INCIDENT_LIMITATIONS
 });
 
 export const IncidentSupport: React.FC = () => {
@@ -197,7 +202,7 @@ export const IncidentSupport: React.FC = () => {
   return (
     <div className="page-container incident-support">
       <div className="disclaimer-banner incident-support__notice" role="alert">
-        <strong>Important Simulated Notice:</strong> This incident support page uses simulated prototype data and does not access external FIFA, venue, transit, ticket, emergency, or current crowd systems. Current external systems are not connected. All response plans are response planning drafts.
+        <strong>Important Simulated Notice:</strong> This incident support page uses simulated prototype data and does not access external FIFA, venue, transit, ticket, emergency, or current crowd systems. Every output is a simulated decision-support draft requiring qualified human review. Local status changes do not dispatch staff; announcement drafts are not published and carry no official authority.
       </div>
 
       <header className="incident-support__header">

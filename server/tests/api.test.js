@@ -274,6 +274,42 @@ describe('Matchday Command API Endpoints', () => {
       expect(systemInstructionCaptured).not.toContain('GEMINI_API_KEY');
     });
 
+    it('instructs Vertex AI to respect explicitly requested translation languages within the existing schema', async () => {
+      let promptCaptured = null;
+      let systemInstructionCaptured = null;
+      let responseSchemaCaptured = null;
+
+      const recordingGenerator = async (prompt, systemInstruction, responseSchema) => {
+        promptCaptured = prompt;
+        systemInstructionCaptured = systemInstruction;
+        responseSchemaCaptured = responseSchema;
+        return mockGeneratorSuccessFan(prompt, systemInstruction, responseSchema);
+      };
+
+      const app = createApp({ generateContentFn: recordingGenerator });
+
+      await request(app)
+        .post('/api/fan-assistant')
+        .send({
+          userQuery: 'Translate this simulated venue announcement into French: "Please walk slowly."',
+          venue: 'Demo Arena',
+          simulatedVenueContext: 'Fixed simulated announcement sample'
+        })
+        .expect(200);
+
+      expect(promptCaptured).toContain('into French');
+      expect(systemInstructionCaptured).toContain('explicitly names one or more target languages');
+      expect(systemInstructionCaptured).toContain('using those target languages');
+      expect(systemInstructionCaptured).toContain('language coverage and translation accuracy are not guaranteed');
+      expect(responseSchemaCaptured.required).toEqual([
+        'summary',
+        'recommendedAction',
+        'simulatedDataUsed',
+        'limitations'
+      ]);
+      expect(responseSchemaCaptured.properties.summary.description).toContain('named target language');
+    });
+
     it('POST /api/incident-support returns structured JSON response with correct values and requires zero API key', async () => {
       let promptCaptured = null;
       let systemInstructionCaptured = null;

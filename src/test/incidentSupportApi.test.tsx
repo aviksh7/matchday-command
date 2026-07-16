@@ -39,7 +39,13 @@ describe('Incident Support API Integration & Fallback Flow', () => {
     await waitFor(() => {
       expect(screen.getByText('AI analysis of spill incident.')).toBeInTheDocument();
       expect(screen.getByText(/Vertex AI via Cloud Run/i)).toBeInTheDocument();
+      expect(screen.getByText('Simulated data only.')).toBeInTheDocument();
     });
+
+    const invariantLimitations = screen.getByText(/Qualified human review is required/i);
+    expect(invariantLimitations).toHaveTextContent(/does not dispatch staff/i);
+    expect(invariantLimitations).toHaveTextContent(/publish announcements/i);
+    expect(invariantLimitations).toHaveTextContent(/official authority/i);
   });
 
   it('switches to Local deterministic fallback on network or server error', async () => {
@@ -85,7 +91,7 @@ describe('Incident Support API Integration & Fallback Flow', () => {
     render(<IncidentSupport />);
 
     const scenarioTypeSelect = screen.getByLabelText(/Incident Type:/i);
-    const generateBtn = screen.getByRole('button', { name: /Generate Local Simulated Plan/i });
+    const generateBtn = screen.getByRole('button', { name: /Generate Simulated Decision-Support Draft/i });
     const venueSelect = screen.getByLabelText(/Select Venue View/i);
 
     fireEvent.click(generateBtn);

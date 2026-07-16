@@ -6,14 +6,12 @@
 }
 
 html {
-  min-width: 320px;
   background: var(--night-950);
   scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
-  min-width: 320px;
   min-height: 100vh;
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;

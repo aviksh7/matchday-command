@@ -17,6 +17,41 @@ describe('Staff Command Center UI Dashboard Component', () => {
     expect(disclaimer.textContent).toContain('does not access external FIFA');
   });
 
+  it('shows service queue pressure from the selected local simulated venue snapshot', () => {
+    render(<StaffCommand />);
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Simulated Service Queue Pressure' })).toBeInTheDocument();
+    expect(screen.getByText('Local simulated snapshot, not live')).toBeInTheDocument();
+    expect(screen.getByText(/Not connected to concession, restroom, or wait-time sensors/i)).toBeInTheDocument();
+
+    const table = screen.getByRole('table', { name: /Simulated service waits for Toronto Stadium Demo/i });
+    const headers = within(table).getAllByRole('columnheader');
+    expect(headers.map(header => header.textContent)).toEqual(['Location', 'Service', 'Simulated wait', 'Pressure']);
+    headers.forEach(header => expect(header).toHaveAttribute('scope', 'col'));
+
+    const foodRow = within(table).getByRole('row', { name: /Maple Grills Sec 102 Food 12 min Elevated pressure/i });
+    expect(within(foodRow).getByRole('rowheader')).toHaveAttribute('scope', 'row');
+
+    expect(within(table).getByRole('row', { name: /Restroom Block Sec 108 Restroom 4 min Low pressure/i })).toBeInTheDocument();
+    expect(within(table).getByRole('row', { name: /Merch Stand North Merchandise 18 min Elevated pressure/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 4, name: 'Simulated sustainability indicators' })).toBeInTheDocument();
+    expect(screen.getByText('Green Transit Encouragement Indicator')).toBeInTheDocument();
+  });
+
+  it('updates simulated queue waits and pressure bands when the venue changes', () => {
+    render(<StaffCommand />);
+
+    fireEvent.change(screen.getByLabelText(/Select Venue View/i), {
+      target: { value: 'mexico-demo' },
+    });
+
+    const table = screen.getByRole('table', { name: /Simulated service waits for Mexico City Stadium Demo/i });
+    expect(within(table).getByRole('row', { name: /Taco Plaza Sec 120 Food 25 min High pressure/i })).toBeInTheDocument();
+    expect(within(table).getByRole('row', { name: /Restroom Block Sec 134 Restroom 15 min Elevated pressure/i })).toBeInTheDocument();
+    expect(within(table).getByRole('row', { name: /Official Souvenirs Plaza Merchandise 30 min High pressure/i })).toBeInTheDocument();
+    expect(screen.queryByText('Maple Grills Sec 102')).not.toBeInTheDocument();
+  });
+
   it('synchronizes incidents and clears the selection when the venue changes', async () => {
     render(<StaffCommand />);
 
@@ -114,5 +149,6 @@ describe('Staff Command Center UI Dashboard Component', () => {
     columns.forEach(column => expect(column).not.toHaveAttribute('style'));
 
     expect(container.querySelector('.staff-command__table-scroll')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Scrollable simulated service queue table' })).toHaveAttribute('tabindex', '0');
   });
 });

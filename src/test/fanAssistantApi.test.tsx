@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import FanAssistant from '../pages/FanAssistant';
+import { SIMULATED_VENUE_ANNOUNCEMENT } from '../logic/fanAssistant';
 
 describe('Fan Assistant API Integration & Fallback Flow', () => {
   let fetchMock: any;
@@ -53,6 +54,34 @@ describe('Fan Assistant API Integration & Fallback Flow', () => {
       expect(screen.getByText(/Local deterministic fallback/i)).toBeInTheDocument();
       expect(screen.getByText(/Network error or connection failure/i)).toBeInTheDocument();
     });
+  });
+
+  it('submits the real simulated announcement with explicit translation targets', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        summary: 'Spanish and French translation demonstration.',
+        recommendedAction: 'Have a qualified language reviewer check this draft.',
+        simulatedDataUsed: ['Fixed simulated venue announcement'],
+        limitations: 'Translation coverage and accuracy are not guaranteed.'
+      })
+    });
+
+    render(<FanAssistant />);
+
+    expect(screen.getByText(/Translation is a limited demonstration/i)).toBeInTheDocument();
+    expect(screen.getByText(/Local fallback is limited to the fixed Spanish\/French announcement sample/i)).toBeInTheDocument();
+
+    const translationButton = screen.getByRole('button', { name: /Demo Spanish\/French translation/i });
+    expect(translationButton).toHaveAttribute('aria-describedby', 'fan-translation-limitations');
+    fireEvent.click(translationButton);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const request = JSON.parse(fetchMock.mock.calls[0][1].body);
+
+    expect(request.userQuery).toContain(SIMULATED_VENUE_ANNOUNCEMENT);
+    expect(request.userQuery).toContain('Spanish and French');
+    expect(request.userQuery).not.toMatch(/placeholder/i);
   });
 
   it('switches to Local deterministic fallback on malformed JSON or invalid schema response', async () => {

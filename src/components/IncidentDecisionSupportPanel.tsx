@@ -26,7 +26,7 @@ const IncidentStatusControl: React.FC<IncidentStatusControlProps> = ({
   isLoading,
   onStatusChange,
 }) => (
-  <fieldset className="incident-status-control">
+  <fieldset className="incident-status-control" aria-describedby="incident-status-note">
     <legend>Local Status:</legend>
     <div className="incident-status-control__buttons">
       {INCIDENT_STATUSES.map((status) => {
@@ -45,6 +45,7 @@ const IncidentStatusControl: React.FC<IncidentStatusControlProps> = ({
         );
       })}
     </div>
+    <p className="incident-status-control__note" id="incident-status-note">Local simulation only. Changing status does not dispatch staff.</p>
   </fieldset>
 );
 
@@ -62,7 +63,7 @@ export const IncidentDecisionSupportPanel: React.FC<IncidentDecisionSupportPanel
       <section className="card incident-panel incident-decision incident-decision--empty">
         <h3>Incident Details &amp; Decision Support</h3>
         <p>
-          Select an incident from the simulated log queue or configure a new custom ticket to inspect simulated incident support plan templates.
+          Select an incident from the simulated log queue or configure a new custom ticket to inspect a simulated decision-support draft.
         </p>
       </section>
     );
@@ -106,6 +107,15 @@ export const IncidentDecisionSupportPanel: React.FC<IncidentDecisionSupportPanel
           </p>
         )}
       </div>
+
+      <aside className="incident-decision__limitations" aria-labelledby="incident-limitations-title">
+        <h4 id="incident-limitations-title">Decision-Support Limitations</h4>
+        <p>{summary.limitations}</p>
+        <p>
+          Qualified human review is required. This prototype does not dispatch staff, publish announcements,
+          contact emergency services, or carry official authority.
+        </p>
+      </aside>
 
       <div className="incident-decision__section">
         <h4>Related Simulated Operations Risks</h4>
