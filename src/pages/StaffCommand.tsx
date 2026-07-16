@@ -18,7 +18,8 @@ export const StaffCommand: React.FC = () => {
 
   // Initialize and update local incident list when selected venue changes
   useEffect(() => {
-    setLocalIncidents(selectedVenue.incidents);
+    const venue = SIMULATED_VENUES.find(v => v.id === selectedVenueId) || SIMULATED_VENUES[0];
+    setLocalIncidents(venue.incidents);
     setSelectedIncidentId(null);
   }, [selectedVenueId]);
 

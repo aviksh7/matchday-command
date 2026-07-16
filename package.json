@@ -3,13 +3,18 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "lint": "oxlint . --deny-warnings",
     "test": "vitest run",
     "test:server": "npm --prefix server test",
-    "test:all": "npm run test && npm run test:server"
+    "test:all": "npm run test && npm run test:server",
+    "check": "npm run lint && npm run build && npm run test:all"
   },
   "dependencies": {
     "react": "^19.2.7",

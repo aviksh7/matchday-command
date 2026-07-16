@@ -17,6 +17,21 @@ describe('Staff Command Center UI Dashboard Component', () => {
     expect(disclaimer.textContent).toContain('does not access external FIFA');
   });
 
+  it('synchronizes incidents and clears the selection when the venue changes', async () => {
+    render(<StaffCommand />);
+
+    fireEvent.click(screen.getByText('INC-201'));
+    expect(screen.getByText(/Simulated Incident Details: INC-201/i)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/Select Venue View/i), {
+      target: { value: 'mexico-demo' },
+    });
+
+    expect(await screen.findByText('INC-301')).toBeInTheDocument();
+    expect(screen.queryByText('INC-201')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Simulated Incident Details: INC-201/i)).not.toBeInTheDocument();
+  });
+
   it('allows selecting an incident and changing its status locally', () => {
     render(<StaffCommand />);
     

@@ -69,13 +69,14 @@ The application supports two modes:
 ## Local Development Steps
 
 ### Prerequisites
-- Node.js (v18 or higher recommended)
-- npm (v9 or higher)
+- Node.js 22.12 or newer
+- npm (the version bundled with Node.js 22 is supported)
 
 ### Installation
 Clone the repository and install the dependencies:
 ```bash
-npm install
+npm ci
+npm --prefix server ci
 ```
 
 ### Run Locally
@@ -94,4 +95,10 @@ npm run build
 Execute the Vitest test suite:
 ```bash
 npm run test
+```
+
+### Run the Full Quality Gate
+Run linting, the production build, and all frontend and backend tests:
+```bash
+npm run check
 ```

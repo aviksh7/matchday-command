@@ -10,6 +10,18 @@ We use **Vitest** + **React Testing Library** for high-speed, non-watch DOM test
 
 ### Commands
 
+#### Run Lint Checks
+Treats all Oxlint warnings as failures:
+```bash
+npm run lint
+```
+
+#### Run the Full Quality Gate
+Runs linting, the production build, and all frontend and backend tests:
+```bash
+npm run check
+```
+
 #### Run Unit & Integration Tests
 Runs the test suite once (non-interactive):
 ```bash

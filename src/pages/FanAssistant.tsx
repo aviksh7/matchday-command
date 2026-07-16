@@ -152,7 +152,7 @@ export const FanAssistant: React.FC = () => {
         };
         setChatHistory(prev => [...prev, assistantMsg]);
       }
-    } catch (err) {
+    } catch {
       if (controller.signal.aborted || currentVenueIdRef.current !== requestVenueId) {
         return;
       }

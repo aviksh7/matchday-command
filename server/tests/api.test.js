@@ -20,7 +20,7 @@ vi.mock('@google/genai', () => {
 
 describe('Matchday Command API Endpoints', () => {
   // Mock generator functions
-  const mockGeneratorSuccessFan = async (prompt, systemInstruction, responseSchema) => {
+  const mockGeneratorSuccessFan = async () => {
     return JSON.stringify({
       summary: 'Grounded reply summary based on mock telemetry.',
       recommendedAction: 'Proceed to Gate A.',
@@ -29,7 +29,7 @@ describe('Matchday Command API Endpoints', () => {
     });
   };
 
-  const mockGeneratorSuccessIncident = async (prompt, systemInstruction, responseSchema) => {
+  const mockGeneratorSuccessIncident = async () => {
     return JSON.stringify({
       situationSummary: 'Simulated situation at Gate B.',
       priorityLevel: 'Medium',

@@ -7,13 +7,28 @@ permissions:
   checks: write
   contents: read
   pull-requests: write
+concurrency:
+  group: firebase-hosting-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 jobs:
   build_and_preview:
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: npm ci && npm run build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - name: Install application dependencies
+        run: npm ci
+      - name: Install server dependencies
+        run: npm --prefix server ci
+      - name: Run quality gates
+        run: npm run check
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}

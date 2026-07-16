@@ -176,7 +176,7 @@ Return a structured JSON object matching the requested schema.`;
       let parsed;
       try {
         parsed = JSON.parse(responseText);
-      } catch (e) {
+      } catch {
         return res.status(500).json({
           error: 'Invalid Output Format',
           message: 'The generative response could not be parsed as valid JSON.'
@@ -199,7 +199,7 @@ Return a structured JSON object matching the requested schema.`;
 
       // Safe JSON output return
       res.json(parsed);
-    } catch (error) {
+    } catch {
       // Return controlled 500 without leaking secrets
       res.status(500).json({
         error: 'Generative Service Failure',
@@ -306,7 +306,7 @@ Return a structured JSON object matching the requested schema.`;
       let parsed;
       try {
         parsed = JSON.parse(responseText);
-      } catch (e) {
+      } catch {
         return res.status(500).json({
           error: 'Invalid Output Format',
           message: 'The generative response could not be parsed as valid JSON.'
@@ -350,7 +350,7 @@ Return a structured JSON object matching the requested schema.`;
 
       // Safe JSON output return
       res.json(parsed);
-    } catch (error) {
+    } catch {
       // Return controlled 500 without leaking secrets
       res.status(500).json({
         error: 'Generative Service Failure',
@@ -360,7 +360,7 @@ Return a structured JSON object matching the requested schema.`;
   });
 
   // Conservative CORS and general error-handling middleware to always return JSON errors
-  app.use((err, req, res, next) => {
+  app.use((err, req, res, _next) => {
     if (err.message === 'Not allowed by CORS') {
       return res.status(400).json({
         error: 'CORS Error',

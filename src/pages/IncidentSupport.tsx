@@ -109,7 +109,7 @@ export const IncidentSupport: React.FC = () => {
           reasonText
         });
       }
-    } catch (err) {
+    } catch {
       if (controller.signal.aborted || currentIncidentIdRef.current !== incident.id || currentVenueIdRef.current !== requestVenueId) {
         return;
       }
