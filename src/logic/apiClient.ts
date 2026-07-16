@@ -146,6 +146,125 @@ export const validatePayloadLimits = (payload: {
   return { valid: true };
 };
 
+const REQUEST_TIMEOUT_MS = 20_000;
+
+type ApiEndpoint = '/api/fan-assistant' | '/api/incident-support';
+type ApiRequestPayload = FanAssistantRequestPayload | IncidentSupportRequestPayload;
+type ResponseValidator<T> = (data: unknown) => data is T;
+type ApiClientFailure = Extract<ApiClientResult<never>, { success: false }>;
+
+interface ValidatedPostOptions<T> {
+  endpoint: ApiEndpoint;
+  payload: ApiRequestPayload;
+  validateResponse: ResponseValidator<T>;
+  abortSignal?: AbortSignal;
+}
+
+const createFailure = (reason: FallbackReason, message: string): ApiClientFailure => ({
+  success: false,
+  reason,
+  message,
+  source: 'Local deterministic fallback'
+});
+
+const isAbortError = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object' || !('name' in error)) return false;
+  return (error as { name: string }).name === 'AbortError';
+};
+
+const postValidatedJson = async <T>({
+  endpoint,
+  payload,
+  validateResponse,
+  abortSignal
+}: ValidatedPostOptions<T>): Promise<ApiClientResult<T>> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const onExternalAbort = () => controller.abort();
+  let externalAbortListenerAttached = false;
+
+  try {
+    if (abortSignal?.aborted) {
+      return createFailure('timeout', 'Request cancelled or timed out. Using local fallback.');
+    }
+
+    if (abortSignal) {
+      abortSignal.addEventListener('abort', onExternalAbort);
+      externalAbortListenerAttached = true;
+    }
+
+    const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      if (response.status === 413 || response.status === 400) {
+        return createFailure(
+          'payload-too-large',
+          'The request payload was rejected or exceeded size limits. Using local fallback.'
+        );
+      }
+      return createFailure(
+        'server',
+        'Backend service returned a non-2xx response. Using local fallback.'
+      );
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = await response.json();
+    } catch (error: unknown) {
+      if (controller.signal.aborted || isAbortError(error)) throw error;
+      return createFailure(
+        'invalid-response',
+        'Failed to parse JSON from response. Using local fallback.'
+      );
+    }
+
+    if (controller.signal.aborted) {
+      return createFailure(
+        'timeout',
+        'Request timed out or was cancelled after 20 seconds. Using local fallback.'
+      );
+    }
+
+    if (!validateResponse(parsed)) {
+      return createFailure(
+        'invalid-response',
+        'Response did not match expected schema. Using local fallback.'
+      );
+    }
+
+    return {
+      success: true,
+      data: parsed,
+      source: 'Vertex AI via Cloud Run'
+    };
+  } catch (error: unknown) {
+    if (controller.signal.aborted || isAbortError(error)) {
+      return createFailure(
+        'timeout',
+        'Request timed out or was cancelled after 20 seconds. Using local fallback.'
+      );
+    }
+
+    return createFailure(
+      'network',
+      'Network error or connection failure. Using local fallback.'
+    );
+  } finally {
+    clearTimeout(timeoutId);
+    if (abortSignal && externalAbortListenerAttached) {
+      abortSignal.removeEventListener('abort', onExternalAbort);
+    }
+  }
+};
+
 /**
  * Sends a query to the Fan Assistant endpoint with a 20s timeout and safe fallback handling.
  */
@@ -179,103 +298,12 @@ export const postFanAssistant = async (
     simulatedVenueContext: compactContext
   };
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-  const onExternalAbort = () => {
-    controller.abort();
-  };
-
-  if (abortSignal) {
-    if (abortSignal.aborted) {
-      clearTimeout(timeoutId);
-      return {
-        success: false,
-        reason: 'timeout',
-        message: 'Request cancelled or timed out. Using local fallback.',
-        source: 'Local deterministic fallback'
-      };
-    }
-    abortSignal.addEventListener('abort', onExternalAbort);
-  }
-
-  try {
-    const response = await fetch(`${getApiBaseUrl()}/api/fan-assistant`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-    if (abortSignal) abortSignal.removeEventListener('abort', onExternalAbort);
-
-    if (!response.ok) {
-      if (response.status === 413 || response.status === 400) {
-        return {
-          success: false,
-          reason: 'payload-too-large',
-          message: 'The request payload was rejected or exceeded size limits. Using local fallback.',
-          source: 'Local deterministic fallback'
-        };
-      }
-      return {
-        success: false,
-        reason: 'server',
-        message: 'Backend service returned a non-2xx response. Using local fallback.',
-        source: 'Local deterministic fallback'
-      };
-    }
-
-    let parsed: unknown;
-    try {
-      parsed = await response.json();
-    } catch {
-      return {
-        success: false,
-        reason: 'invalid-response',
-        message: 'Failed to parse JSON from response. Using local fallback.',
-        source: 'Local deterministic fallback'
-      };
-    }
-
-    if (!isValidFanAssistantResponse(parsed)) {
-      return {
-        success: false,
-        reason: 'invalid-response',
-        message: 'Response did not match expected schema. Using local fallback.',
-        source: 'Local deterministic fallback'
-      };
-    }
-
-    return {
-      success: true,
-      data: parsed,
-      source: 'Vertex AI via Cloud Run'
-    };
-  } catch (err: unknown) {
-    clearTimeout(timeoutId);
-    if (abortSignal) abortSignal.removeEventListener('abort', onExternalAbort);
-
-    const isAbort = (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'AbortError');
-    if (isAbort) {
-      return {
-        success: false,
-        reason: 'timeout',
-        message: 'Request timed out or was cancelled after 20 seconds. Using local fallback.',
-        source: 'Local deterministic fallback'
-      };
-    }
-
-    return {
-      success: false,
-      reason: 'network',
-      message: 'Network error or connection failure. Using local fallback.',
-      source: 'Local deterministic fallback'
-    };
-  }
+  return postValidatedJson<FanAssistantApiResponse>({
+    endpoint: '/api/fan-assistant',
+    payload,
+    validateResponse: isValidFanAssistantResponse,
+    abortSignal
+  });
 };
 
 /**
@@ -312,101 +340,10 @@ export const postIncidentSupport = async (
     simulatedVenueContext: compactContext
   };
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-  const onExternalAbort = () => {
-    controller.abort();
-  };
-
-  if (abortSignal) {
-    if (abortSignal.aborted) {
-      clearTimeout(timeoutId);
-      return {
-        success: false,
-        reason: 'timeout',
-        message: 'Request cancelled or timed out. Using local fallback.',
-        source: 'Local deterministic fallback'
-      };
-    }
-    abortSignal.addEventListener('abort', onExternalAbort);
-  }
-
-  try {
-    const response = await fetch(`${getApiBaseUrl()}/api/incident-support`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-    if (abortSignal) abortSignal.removeEventListener('abort', onExternalAbort);
-
-    if (!response.ok) {
-      if (response.status === 413 || response.status === 400) {
-        return {
-          success: false,
-          reason: 'payload-too-large',
-          message: 'The request payload was rejected or exceeded size limits. Using local fallback.',
-          source: 'Local deterministic fallback'
-        };
-      }
-      return {
-        success: false,
-        reason: 'server',
-        message: 'Backend service returned a non-2xx response. Using local fallback.',
-        source: 'Local deterministic fallback'
-      };
-    }
-
-    let parsed: unknown;
-    try {
-      parsed = await response.json();
-    } catch {
-      return {
-        success: false,
-        reason: 'invalid-response',
-        message: 'Failed to parse JSON from response. Using local fallback.',
-        source: 'Local deterministic fallback'
-      };
-    }
-
-    if (!isValidIncidentSupportResponse(parsed)) {
-      return {
-        success: false,
-        reason: 'invalid-response',
-        message: 'Response did not match expected schema. Using local fallback.',
-        source: 'Local deterministic fallback'
-      };
-    }
-
-    return {
-      success: true,
-      data: parsed,
-      source: 'Vertex AI via Cloud Run'
-    };
-  } catch (err: unknown) {
-    clearTimeout(timeoutId);
-    if (abortSignal) abortSignal.removeEventListener('abort', onExternalAbort);
-
-    const isAbort = (err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'AbortError');
-    if (isAbort) {
-      return {
-        success: false,
-        reason: 'timeout',
-        message: 'Request timed out or was cancelled after 20 seconds. Using local fallback.',
-        source: 'Local deterministic fallback'
-      };
-    }
-
-    return {
-      success: false,
-      reason: 'network',
-      message: 'Network error or connection failure. Using local fallback.',
-      source: 'Local deterministic fallback'
-    };
-  }
+  return postValidatedJson<IncidentSupportApiResponse>({
+    endpoint: '/api/incident-support',
+    payload,
+    validateResponse: isValidIncidentSupportResponse,
+    abortSignal
+  });
 };

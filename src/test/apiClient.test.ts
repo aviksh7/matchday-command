@@ -221,97 +221,381 @@ describe('apiClient', () => {
   });
 
   describe('Network & Fallback Handling', () => {
-    let fetchMock: any;
+    const validFanResponse = {
+      summary: 'Summary',
+      recommendedAction: 'Action',
+      simulatedDataUsed: ['Data'],
+      limitations: 'Simulated'
+    };
+
+    const validIncidentResponse = {
+      situationSummary: 'Summary',
+      priorityLevel: 'Medium' as const,
+      recommendedActions: ['Action'],
+      volunteerBriefing: 'Briefing',
+      fanAnnouncementDraft: 'Announcement',
+      accessibilityNote: 'Note',
+      crowdTransitNote: 'Transit',
+      simulatedDataUsed: ['Data'],
+      limitations: 'Simulated'
+    };
+
+    const createAbortError = () => {
+      const error = new Error('Internal abort detail must not leak');
+      error.name = 'AbortError';
+      return error;
+    };
+
+    const createExternalSignalHarness = () => {
+      const controller = new AbortController();
+      const addEventListenerSpy = vi.spyOn(controller.signal, 'addEventListener');
+      const removeEventListenerSpy = vi.spyOn(controller.signal, 'removeEventListener');
+
+      const expectAttached = () => {
+        expect(addEventListenerSpy).toHaveBeenCalledTimes(1);
+        expect(removeEventListenerSpy).not.toHaveBeenCalled();
+        expect(vi.getTimerCount()).toBe(1);
+      };
+
+      const expectCleanedUp = () => {
+        expect(addEventListenerSpy).toHaveBeenCalledTimes(1);
+        const registeredListener = addEventListenerSpy.mock.calls[0]?.[1];
+        expect(registeredListener).toEqual(expect.any(Function));
+        expect(removeEventListenerSpy).toHaveBeenCalledTimes(1);
+        expect(removeEventListenerSpy.mock.calls.some(
+          ([type, listener]) => type === 'abort' && listener === registeredListener
+        )).toBe(true);
+        expect(vi.getTimerCount()).toBe(0);
+      };
+
+      return {
+        controller,
+        addEventListenerSpy,
+        removeEventListenerSpy,
+        expectAttached,
+        expectCleanedUp
+      };
+    };
+
+    let fetchMock: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
+      vi.useFakeTimers();
       fetchMock = vi.fn();
       vi.stubGlobal('fetch', fetchMock);
     });
 
     afterEach(() => {
+      vi.clearAllTimers();
+      vi.useRealTimers();
+      vi.restoreAllMocks();
       vi.unstubAllGlobals();
     });
 
-    it('postFanAssistant should return Vertex AI via Cloud Run on 200 OK with valid schema', async () => {
+    it('posts the exact Fan Assistant request and returns the validated success result', async () => {
+      const signalHarness = createExternalSignalHarness();
       fetchMock.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({
-          summary: 'Summary',
-          recommendedAction: 'Action',
-          simulatedDataUsed: ['Data'],
-          limitations: 'Simulated'
-        })
+        status: 200,
+        json: vi.fn().mockResolvedValue(validFanResponse)
       });
 
-      const res = await postFanAssistant('Hello', mockVenue);
-      expect(res.success).toBe(true);
-      if (res.success) {
-        expect(res.source).toBe('Vertex AI via Cloud Run');
-        expect(res.data.summary).toBe('Summary');
-      }
+      const result = await postFanAssistant('Hello', mockVenue, signalHarness.controller.signal);
+
+      expect(result).toEqual({
+        success: true,
+        data: validFanResponse,
+        source: 'Vertex AI via Cloud Run'
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      const [url, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe('/api/fan-assistant');
+      expect(requestInit.method).toBe('POST');
+      expect(requestInit.headers).toEqual({ 'Content-Type': 'application/json' });
+      expect(JSON.parse(String(requestInit.body))).toEqual({
+        userQuery: 'Hello',
+        venue: buildCompactVenue(mockVenue),
+        simulatedVenueContext: buildCompactContext(mockVenue)
+      });
+      expect(requestInit.signal).toBeDefined();
+      expect(requestInit.signal).not.toBe(signalHarness.controller.signal);
+      expect((requestInit.signal as AbortSignal).aborted).toBe(false);
+      signalHarness.expectCleanedUp();
     });
 
-    it('postFanAssistant should return Local deterministic fallback on non-2xx', async () => {
+    it('posts the exact Incident Support request and keeps its response schema distinct', async () => {
+      const signalHarness = createExternalSignalHarness();
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue(validIncidentResponse)
+      });
+
+      const result = await postIncidentSupport(mockIncident, mockVenue, signalHarness.controller.signal);
+
+      expect(result).toEqual({
+        success: true,
+        data: validIncidentResponse,
+        source: 'Vertex AI via Cloud Run'
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      const [url, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe('/api/incident-support');
+      expect(requestInit.method).toBe('POST');
+      expect(requestInit.headers).toEqual({ 'Content-Type': 'application/json' });
+      expect(JSON.parse(String(requestInit.body))).toEqual({
+        incident: buildCompactIncident(mockIncident),
+        venue: buildCompactVenue(mockVenue),
+        simulatedVenueContext: buildCompactContext(mockVenue)
+      });
+      expect(requestInit.signal).toBeDefined();
+      expect(requestInit.signal).not.toBe(signalHarness.controller.signal);
+      signalHarness.expectCleanedUp();
+    });
+
+    it('returns a safe server fallback for a 500 without reading or leaking its body', async () => {
+      const signalHarness = createExternalSignalHarness();
+      const json = vi.fn().mockResolvedValue({ internalDetail: 'sensitive backend body' });
       fetchMock.mockResolvedValueOnce({
         ok: false,
-        status: 500
+        status: 500,
+        json
       });
 
-      const res = await postFanAssistant('Hello', mockVenue);
-      expect(res.success).toBe(false);
-      if (!res.success) {
-        expect(res.source).toBe('Local deterministic fallback');
-        expect(res.reason).toBe('server');
-      }
+      const result = await postFanAssistant('Hello', mockVenue, signalHarness.controller.signal);
+
+      expect(result).toEqual({
+        success: false,
+        reason: 'server',
+        message: 'Backend service returned a non-2xx response. Using local fallback.',
+        source: 'Local deterministic fallback'
+      });
+      expect(json).not.toHaveBeenCalled();
+      expect(JSON.stringify(result)).not.toContain('sensitive backend body');
+      signalHarness.expectCleanedUp();
     });
 
-    it('postFanAssistant should return Local deterministic fallback on malformed JSON or schema failure', async () => {
+    it.each([400, 413])('preserves the payload-too-large fallback for HTTP %i', async status => {
+      const signalHarness = createExternalSignalHarness();
       fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ badKey: 123 })
+        ok: false,
+        status
       });
 
-      const res = await postFanAssistant('Hello', mockVenue);
-      expect(res.success).toBe(false);
-      if (!res.success) {
-        expect(res.source).toBe('Local deterministic fallback');
-        expect(res.reason).toBe('invalid-response');
-      }
+      const result = await postFanAssistant('Hello', mockVenue, signalHarness.controller.signal);
+
+      expect(result).toEqual({
+        success: false,
+        reason: 'payload-too-large',
+        message: 'The request payload was rejected or exceeded size limits. Using local fallback.',
+        source: 'Local deterministic fallback'
+      });
+      signalHarness.expectCleanedUp();
     });
 
-    it('postIncidentSupport should return Vertex AI via Cloud Run on 200 OK with valid schema', async () => {
+    it('returns a safe network fallback without leaking internal rejection details', async () => {
+      const signalHarness = createExternalSignalHarness();
+      fetchMock.mockRejectedValueOnce(new Error('secret DNS and credential detail'));
+
+      const result = await postIncidentSupport(mockIncident, mockVenue, signalHarness.controller.signal);
+
+      expect(result).toEqual({
+        success: false,
+        reason: 'network',
+        message: 'Network error or connection failure. Using local fallback.',
+        source: 'Local deterministic fallback'
+      });
+      expect(JSON.stringify(result)).not.toContain('secret DNS and credential detail');
+      signalHarness.expectCleanedUp();
+    });
+
+    it('distinguishes malformed JSON from a network rejection', async () => {
+      const signalHarness = createExternalSignalHarness();
       fetchMock.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({
-          situationSummary: 'Summary',
-          priorityLevel: 'Medium',
-          recommendedActions: ['Action'],
-          volunteerBriefing: 'Briefing',
-          fanAnnouncementDraft: 'Announcement',
-          accessibilityNote: 'Note',
-          crowdTransitNote: 'Transit',
-          simulatedDataUsed: ['Data'],
-          limitations: 'Simulated'
+        status: 200,
+        json: vi.fn().mockRejectedValue(new SyntaxError('Unexpected secret response text'))
+      });
+
+      const result = await postFanAssistant('Hello', mockVenue, signalHarness.controller.signal);
+
+      expect(result).toEqual({
+        success: false,
+        reason: 'invalid-response',
+        message: 'Failed to parse JSON from response. Using local fallback.',
+        source: 'Local deterministic fallback'
+      });
+      expect(JSON.stringify(result)).not.toContain('Unexpected secret response text');
+      signalHarness.expectCleanedUp();
+    });
+
+    it('returns the schema-specific fallback for parsed but invalid data', async () => {
+      const signalHarness = createExternalSignalHarness();
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue({ badKey: 123 })
+      });
+
+      const result = await postFanAssistant('Hello', mockVenue, signalHarness.controller.signal);
+
+      expect(result).toEqual({
+        success: false,
+        reason: 'invalid-response',
+        message: 'Response did not match expected schema. Using local fallback.',
+        source: 'Local deterministic fallback'
+      });
+      signalHarness.expectCleanedUp();
+    });
+
+    it('aborts at exactly 20 seconds and cleans the timeout and external listener', async () => {
+      const signalHarness = createExternalSignalHarness();
+      let internalSignal: AbortSignal | undefined;
+
+      fetchMock.mockImplementationOnce((_url: string, requestInit: RequestInit) => {
+        internalSignal = requestInit.signal as AbortSignal;
+        return new Promise((_resolve, reject) => {
+          internalSignal?.addEventListener('abort', () => reject(createAbortError()), { once: true });
+        });
+      });
+
+      const request = postFanAssistant('Hello', mockVenue, signalHarness.controller.signal);
+      let settled = false;
+      void request.then(() => {
+        settled = true;
+      });
+
+      expect(internalSignal?.aborted).toBe(false);
+      signalHarness.expectAttached();
+
+      await vi.advanceTimersByTimeAsync(19_999);
+      expect(internalSignal?.aborted).toBe(false);
+      expect(settled).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(1);
+      const result = await request;
+
+      expect(internalSignal?.aborted).toBe(true);
+      expect(result).toEqual({
+        success: false,
+        reason: 'timeout',
+        message: 'Request timed out or was cancelled after 20 seconds. Using local fallback.',
+        source: 'Local deterministic fallback'
+      });
+      signalHarness.expectCleanedUp();
+    });
+
+    it('propagates an external abort while the response body is pending', async () => {
+      const signalHarness = createExternalSignalHarness();
+      let internalSignal: AbortSignal | undefined;
+      let markJsonStarted: (() => void) | undefined;
+      const jsonStarted = new Promise<void>(resolve => {
+        markJsonStarted = resolve;
+      });
+
+      fetchMock.mockImplementationOnce((_url: string, requestInit: RequestInit) => {
+        internalSignal = requestInit.signal as AbortSignal;
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: vi.fn(() => {
+            markJsonStarted?.();
+            return new Promise((_resolve, reject) => {
+              internalSignal?.addEventListener('abort', () => reject(createAbortError()), { once: true });
+            });
+          })
+        });
+      });
+
+      const request = postFanAssistant('Hello', mockVenue, signalHarness.controller.signal);
+      await jsonStarted;
+
+      expect(internalSignal?.aborted).toBe(false);
+      signalHarness.expectAttached();
+
+      signalHarness.controller.abort();
+      const result = await request;
+
+      expect(internalSignal?.aborted).toBe(true);
+      expect(result).toEqual({
+        success: false,
+        reason: 'timeout',
+        message: 'Request timed out or was cancelled after 20 seconds. Using local fallback.',
+        source: 'Local deterministic fallback'
+      });
+      signalHarness.expectCleanedUp();
+    });
+
+    it('returns immediately for an already-aborted external signal without starting a request or timer', async () => {
+      const controller = new AbortController();
+      controller.abort();
+      const addEventListenerSpy = vi.spyOn(controller.signal, 'addEventListener');
+      const removeEventListenerSpy = vi.spyOn(controller.signal, 'removeEventListener');
+
+      const result = await postFanAssistant('Hello', mockVenue, controller.signal);
+
+      expect(result).toEqual({
+        success: false,
+        reason: 'timeout',
+        message: 'Request cancelled or timed out. Using local fallback.',
+        source: 'Local deterministic fallback'
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(addEventListenerSpy).not.toHaveBeenCalled();
+      expect(removeEventListenerSpy).not.toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('keeps lifecycle resources through status, JSON parsing, and schema validation, then cleans them', async () => {
+      const signalHarness = createExternalSignalHarness();
+      let resourcesActiveDuringFetch = false;
+      let resourcesActiveDuringStatus = false;
+      let resourcesActiveDuringJson = false;
+      let resourcesActiveDuringSchema = false;
+
+      const resourcesAreActive = () => (
+        vi.getTimerCount() === 1
+        && signalHarness.addEventListenerSpy.mock.calls.length === 1
+        && signalHarness.removeEventListenerSpy.mock.calls.length === 0
+      );
+
+      const responseBody = {
+        get summary() {
+          resourcesActiveDuringSchema = resourcesAreActive();
+          return validFanResponse.summary;
+        },
+        recommendedAction: validFanResponse.recommendedAction,
+        simulatedDataUsed: validFanResponse.simulatedDataUsed,
+        limitations: validFanResponse.limitations
+      };
+
+      const response = {
+        get ok() {
+          resourcesActiveDuringStatus = resourcesAreActive();
+          return true;
+        },
+        status: 200,
+        json: vi.fn(async () => {
+          resourcesActiveDuringJson = resourcesAreActive();
+          return responseBody;
         })
+      };
+
+      fetchMock.mockImplementationOnce(() => {
+        resourcesActiveDuringFetch = resourcesAreActive();
+        return Promise.resolve(response);
       });
 
-      const res = await postIncidentSupport(mockIncident, mockVenue);
-      expect(res.success).toBe(true);
-      if (res.success) {
-        expect(res.source).toBe('Vertex AI via Cloud Run');
-        expect(res.data.priorityLevel).toBe('Medium');
-      }
-    });
+      const result = await postFanAssistant('Hello', mockVenue, signalHarness.controller.signal);
 
-    it('postIncidentSupport should handle network rejection cleanly', async () => {
-      fetchMock.mockRejectedValueOnce(new Error('Network error'));
-
-      const res = await postIncidentSupport(mockIncident, mockVenue);
-      expect(res.success).toBe(false);
-      if (!res.success) {
-        expect(res.source).toBe('Local deterministic fallback');
-        expect(res.reason).toBe('network');
-      }
+      expect(result.success).toBe(true);
+      expect(resourcesActiveDuringFetch).toBe(true);
+      expect(resourcesActiveDuringStatus).toBe(true);
+      expect(resourcesActiveDuringJson).toBe(true);
+      expect(resourcesActiveDuringSchema).toBe(true);
+      signalHarness.expectCleanedUp();
     });
   });
 });
