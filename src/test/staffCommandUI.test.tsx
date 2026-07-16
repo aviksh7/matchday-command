@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import StaffCommand from '../pages/StaffCommand';
 
 describe('Staff Command Center UI Dashboard Component', () => {
@@ -58,5 +58,61 @@ describe('Staff Command Center UI Dashboard Component', () => {
     
     // The button for Dispatched should now be disabled since it is the active status
     expect(dispatchButton).toBeDisabled();
+  });
+
+  it('resets local incident status when leaving and returning to a venue', async () => {
+    render(<StaffCommand />);
+
+    fireEvent.click(screen.getByRole('button', { name: /View incident INC-201 details/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dispatched' }));
+    expect(screen.getByRole('button', { name: 'Dispatched' })).toBeDisabled();
+
+    const venueSelect = screen.getByLabelText(/Select Venue View/i);
+    fireEvent.change(venueSelect, { target: { value: 'mexico-demo' } });
+    fireEvent.change(venueSelect, { target: { value: 'toronto-demo' } });
+
+    fireEvent.click(await screen.findByRole('button', { name: /View incident INC-201 details/i }));
+    expect(screen.getByRole('button', { name: 'Open' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Dispatched' })).toBeEnabled();
+  });
+
+  it('exposes incident selection as a focusable native keyboard control', () => {
+    render(<StaffCommand />);
+
+    const selectIncident = screen.getByRole('button', { name: /View incident INC-201 details/i });
+    expect(selectIncident.tagName).toBe('BUTTON');
+    expect(selectIncident).toHaveAttribute('type', 'button');
+
+    selectIncident.focus();
+    expect(selectIncident).toHaveFocus();
+
+    fireEvent.click(selectIncident);
+    expect(screen.getByText(/Simulated Incident Details: INC-201/i)).toBeInTheDocument();
+  });
+
+  it('labels the incident table with a useful caption and scoped column headers', () => {
+    render(<StaffCommand />);
+
+    const table = screen.getByRole('table', { name: /Simulated incidents for Toronto Stadium Demo/i });
+    const headers = within(table).getAllByRole('columnheader');
+
+    expect(headers).toHaveLength(4);
+    headers.forEach(header => expect(header).toHaveAttribute('scope', 'col'));
+  });
+
+  it('provides narrow-layout hooks without an inline minimum-width grid', () => {
+    const { container } = render(<StaffCommand />);
+
+    expect(container.firstElementChild).toHaveClass('staff-command');
+
+    const grid = container.querySelector('.staff-command__grid');
+    expect(grid).toBeInTheDocument();
+    expect(grid).not.toHaveAttribute('style');
+
+    const columns = container.querySelectorAll('.staff-command__column');
+    expect(columns).toHaveLength(2);
+    columns.forEach(column => expect(column).not.toHaveAttribute('style'));
+
+    expect(container.querySelector('.staff-command__table-scroll')).toBeInTheDocument();
   });
 });

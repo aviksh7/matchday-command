@@ -86,6 +86,7 @@ describe('Incident Support API Integration & Fallback Flow', () => {
 
     const scenarioTypeSelect = screen.getByLabelText(/Incident Type:/i);
     const generateBtn = screen.getByRole('button', { name: /Generate Local Simulated Plan/i });
+    const venueSelect = screen.getByLabelText(/Select Venue View/i);
 
     fireEvent.click(generateBtn);
 
@@ -93,6 +94,10 @@ describe('Incident Support API Integration & Fallback Flow', () => {
     expect(screen.getByText(/Generating Vertex AI guidance via Cloud Run/i)).toBeInTheDocument();
     expect(generateBtn).toBeDisabled();
     expect(scenarioTypeSelect).toBeDisabled();
+    expect(venueSelect).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Dispatched' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Resolved' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Review incident INC-201/i })).not.toBeDisabled();
 
     resolveFetch({
       ok: true,
@@ -145,6 +150,8 @@ describe('Incident Support API Integration & Fallback Flow', () => {
     fireEvent.click(inc302);
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(true);
+    expect(fetchMock.mock.calls[1][1].signal.aborted).toBe(false);
 
     // Resolve second query (INC-302)
     resolveSecondFetch({
@@ -167,22 +174,29 @@ describe('Incident Support API Integration & Fallback Flow', () => {
     });
 
     // Now resolve the stale first query (INC-301) with distinct text
-    resolveFirstFetch({
-      ok: true,
-      json: async () => ({
-        situationSummary: 'STALE INC-301 AI Response that should be ignored.',
-        priorityLevel: 'Medium',
-        recommendedActions: ['STALE Action'],
-        volunteerBriefing: 'STALE Briefing.',
-        fanAnnouncementDraft: 'STALE Announcement.',
-        accessibilityNote: 'STALE Note.',
-        crowdTransitNote: 'STALE Transit.',
-        simulatedDataUsed: ['STALE Telemetry'],
-        limitations: 'Simulated data only.'
-      })
+    const staleJson = vi.fn().mockResolvedValue({
+      situationSummary: 'STALE INC-301 AI Response that should be ignored.',
+      priorityLevel: 'Medium',
+      recommendedActions: ['STALE Action'],
+      volunteerBriefing: 'STALE Briefing.',
+      fanAnnouncementDraft: 'STALE Announcement.',
+      accessibilityNote: 'STALE Note.',
+      crowdTransitNote: 'STALE Transit.',
+      simulatedDataUsed: ['STALE Telemetry'],
+      limitations: 'Simulated data only.'
     });
 
-    // Verify stale answer never overwrites INC-302
-    expect(screen.queryByText('STALE INC-301 AI Response that should be ignored.')).not.toBeInTheDocument();
+    resolveFirstFetch({
+      ok: true,
+      json: staleJson
+    });
+
+    // Yield until the stale response has actually traversed the async parser,
+    // then verify it cannot overwrite the current incident.
+    await waitFor(() => {
+      expect(staleJson).toHaveBeenCalledTimes(1);
+      expect(screen.queryByText('STALE INC-301 AI Response that should be ignored.')).not.toBeInTheDocument();
+      expect(screen.getByText('INC-302 AI Response.')).toBeInTheDocument();
+    });
   });
 });
