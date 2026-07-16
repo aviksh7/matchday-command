@@ -1,0 +1,17 @@
+#incident-venue-select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 720px) {
+  .incident-venue-control {
+    width: 100%;
+    min-width: 0;
+    align-items: stretch !important;
+    flex-direction: column;
+  }
+
+  #incident-venue-select {
+    width: 100%;
+  }
+}

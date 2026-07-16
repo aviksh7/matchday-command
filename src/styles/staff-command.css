@@ -1,0 +1,21 @@
+#staff-venue-select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.incident-row:hover {
+  background: #eee8d9 !important;
+}
+
+@media (max-width: 720px) {
+  .staff-venue-control {
+    width: 100%;
+    min-width: 0;
+    align-items: stretch !important;
+    flex-direction: column;
+  }
+
+  #staff-venue-select {
+    width: 100%;
+  }
+}

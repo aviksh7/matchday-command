@@ -8,6 +8,7 @@ import type { VenueData, IncidentData } from '../types';
 import { postIncidentSupport } from '../logic/apiClient';
 import type { IncidentSupportApiResponse, ResponseSource } from '../logic/apiClient';
 import Icon from '../components/Icon';
+import '../styles/incident-support.css';
 
 interface CachedApiResult {
   incidentId: string;
@@ -208,7 +209,7 @@ export const IncidentSupport: React.FC = () => {
         </div>
 
         {/* Venue Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="incident-venue-control" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <label htmlFor="incident-venue-select" style={{ fontWeight: 'bold' }}>Select Venue View (Simulated):</label>
           <select 
             id="incident-venue-select" 

@@ -178,10 +178,6 @@ a {
 .status-elevated { background: var(--amber-paper) !important; }
 .status-critical { background: var(--red-paper) !important; }
 
-.incident-row:hover {
-  background: #eee8d9 !important;
-}
-
 .inline-icon-label {
   display: inline-flex;
   gap: 0.4rem;

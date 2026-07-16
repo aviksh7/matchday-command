@@ -5,6 +5,7 @@ import FeedChip from '../components/FeedChip';
 import MapContextPanel from '../components/MapContextPanel';
 import SectionHeader from '../components/SectionHeader';
 import StadiumMap, { type MapSelection } from '../components/StadiumMap';
+import '../styles/crowd-map.css';
 
 interface CrowdMapProps {
   initialVenueId?: string;

@@ -13,6 +13,7 @@ import Icon from '../components/Icon';
 import SectionHeader from '../components/SectionHeader';
 import TelemetryRibbon, { type TelemetryItem } from '../components/TelemetryRibbon';
 import VenueTicket from '../components/VenueTicket';
+import '../styles/home.css';
 
 interface HomeProps {
   setCurrentPage: (page: PageId) => void;

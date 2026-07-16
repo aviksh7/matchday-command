@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import Home from './pages/Home';
-import FanAssistant from './pages/FanAssistant';
-import StaffCommand from './pages/StaffCommand';
-import CrowdMap from './pages/CrowdMap';
-import IncidentSupport from './pages/IncidentSupport';
-import ProjectDetails from './pages/ProjectDetails';
 import type { PageId } from './types';
 import AppShell from './components/AppShell';
+import { PageLoadBoundary, PageLoadingState } from './components/PageLoadBoundary';
+import { loadPageModule } from './logic/pageLoader';
 import './App.css';
+
+const CrowdMap = lazy(() => loadPageModule(import('./pages/CrowdMap')));
+const FanAssistant = lazy(() => loadPageModule(import('./pages/FanAssistant')));
+const StaffCommand = lazy(() => loadPageModule(import('./pages/StaffCommand')));
+const IncidentSupport = lazy(() => loadPageModule(import('./pages/IncidentSupport')));
+const ProjectDetails = lazy(() => loadPageModule(import('./pages/ProjectDetails')));
 
 export const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<PageId>('home');
@@ -51,7 +54,11 @@ export const App: React.FC = () => {
 
   return (
     <AppShell currentPage={currentPage} onNavigate={navigate}>
-      {renderPage()}
+      <PageLoadBoundary key={currentPage}>
+        <Suspense fallback={<PageLoadingState />}>
+          {renderPage()}
+        </Suspense>
+      </PageLoadBoundary>
     </AppShell>
   );
 };

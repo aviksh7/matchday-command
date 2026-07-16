@@ -1,6 +1,7 @@
 import React from 'react';
 import FeedChip from '../components/FeedChip';
 import Icon from '../components/Icon';
+import '../styles/project-details.css';
 
 const LIVE_APPLICATION_URL = 'https://matchday-command-2026.web.app';
 const REPOSITORY_URL = 'https://github.com/aviksh7/matchday-command';

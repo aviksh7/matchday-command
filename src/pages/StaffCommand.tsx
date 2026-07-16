@@ -8,6 +8,7 @@ import {
   getRecommendedStaffActions
 } from '../logic/staffCommand';
 import type { VenueData, IncidentData } from '../types';
+import '../styles/staff-command.css';
 
 export const StaffCommand: React.FC = () => {
   const [selectedVenueId, setSelectedVenueId] = useState<string>(SIMULATED_VENUES[0].id);
@@ -70,7 +71,7 @@ export const StaffCommand: React.FC = () => {
         </div>
         
         {/* Venue Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="staff-venue-control" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <label htmlFor="staff-venue-select" style={{ fontWeight: 'bold' }}>Select Venue View (Simulated):</label>
           <select 
             id="staff-venue-select" 

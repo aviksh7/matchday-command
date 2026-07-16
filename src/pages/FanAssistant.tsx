@@ -6,6 +6,7 @@ import type { AssistantResponse } from '../types';
 import { postFanAssistant } from '../logic/apiClient';
 import type { ResponseSource } from '../logic/apiClient';
 import Icon, { type IconName } from '../components/Icon';
+import '../styles/fan-assistant.css';
 
 interface Message {
   id: string;
