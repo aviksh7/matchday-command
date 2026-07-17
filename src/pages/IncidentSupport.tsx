@@ -10,6 +10,7 @@ import type { IncidentSupportApiResponse, ResponseSource } from '../logic/apiCli
 import IncidentQueue from '../components/IncidentQueue';
 import IncidentScenarioBuilder from '../components/IncidentScenarioBuilder';
 import IncidentDecisionSupportPanel from '../components/IncidentDecisionSupportPanel';
+import '../styles/operations-shared.css';
 import '../styles/incident-support.css';
 
 interface CachedApiResult {
@@ -23,6 +24,8 @@ const LOCAL_INCIDENT_LIMITATIONS = [
   'Simulated prototype data only.',
   'The deterministic fallback is limited to this local venue snapshot and cannot verify conditions or replace trained staff.'
 ].join(' ');
+
+const CUSTOM_SCENARIO_ID = 'SCEN-MOCK';
 
 const normalizeLocalSummary = (summary: ReturnType<typeof getIncidentSupportSummary>): IncidentSupportApiResponse => ({
   situationSummary: summary.situationSummary,
@@ -137,7 +140,7 @@ export const IncidentSupport: React.FC = () => {
   };
 
   const handleStatusChange = (incidentId: string, newStatus: 'Open' | 'Dispatched' | 'Resolved') => {
-    if (incidentId === 'SCEN-MOCK' && customScenario) {
+    if (incidentId === CUSTOM_SCENARIO_ID && customScenario) {
       setCustomScenario({ ...customScenario, status: newStatus });
     } else {
       setLocalIncidents(prev =>
@@ -148,7 +151,7 @@ export const IncidentSupport: React.FC = () => {
 
   // Find the selected incident (either from the local queue or the custom scenario builder)
   let selectedIncident: IncidentData | undefined;
-  if (selectedIncidentId === 'SCEN-MOCK' && customScenario) {
+  if (selectedIncidentId === CUSTOM_SCENARIO_ID && customScenario) {
     selectedIncident = customScenario;
   } else if (selectedIncidentId) {
     selectedIncident = localIncidents.find(inc => inc.id === selectedIncidentId);
@@ -157,7 +160,7 @@ export const IncidentSupport: React.FC = () => {
   // Construct current snapshot venue data
   const venueSnapshot: VenueData = {
     ...selectedVenue,
-    incidents: customScenario && selectedIncidentId === 'SCEN-MOCK' 
+    incidents: customScenario && selectedIncidentId === CUSTOM_SCENARIO_ID
       ? [customScenario, ...localIncidents] 
       : localIncidents
   };
@@ -175,7 +178,7 @@ export const IncidentSupport: React.FC = () => {
     if (isLoading) return;
 
     const newScenario: IncidentData = {
-      id: 'SCEN-MOCK',
+      id: CUSTOM_SCENARIO_ID,
       type: customType,
       location: customLocation.trim() || 'General Stadium Concourse',
       severity: customSeverity,
@@ -183,7 +186,7 @@ export const IncidentSupport: React.FC = () => {
       timestamp: new Date().toTimeString().split(' ')[0].substring(0, 5)
     };
     setCustomScenario(newScenario);
-    setSelectedIncidentId('SCEN-MOCK');
+    setSelectedIncidentId(CUSTOM_SCENARIO_ID);
 
     const updatedVenueSnapshot = {
       ...selectedVenue,

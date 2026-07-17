@@ -13,7 +13,6 @@ export interface IncidentData {
   severity: 'Low' | 'Medium' | 'High';
   status: 'Open' | 'Dispatched' | 'Resolved';
   timestamp: string;
-  actionPlanText?: string;
 }
 
 export interface GateData {

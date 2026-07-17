@@ -307,8 +307,6 @@
 .section-header h2 { font-size: clamp(2rem, 4vw, 3.4rem); }
 .section-header h3 { font-size: clamp(1.4rem, 2.5vw, 2rem); }
 .section-header p { margin: 0.85rem 0 0; color: var(--night-muted); line-height: 1.65; }
-.section-header--paper .section-header__eyebrow { color: var(--cyan-paper); }
-.section-header--paper p { color: var(--paper-muted); }
 
 .meter { display: grid; gap: 0.45rem; }
 .meter__label { display: flex; align-items: center; justify-content: space-between; color: var(--paper-muted); font-size: 0.76rem; }

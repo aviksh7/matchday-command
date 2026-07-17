@@ -73,18 +73,55 @@ describe('Staff Command Helper Logic Functions', () => {
   });
 
   it('correctly constructs and sorts the priority queue by severity risk', () => {
-    const queue = getStaffPriorityQueue(mockTestVenue);
-    expect(queue.length).toBeGreaterThan(0);
-    
-    // Check that all High severity items are sorted before Medium severity items
-    let seenMedium = false;
-    queue.forEach(item => {
-      if (item.severity === 'High') {
-        expect(seenMedium).toBe(false);
-      } else if (item.severity === 'Medium') {
-        seenMedium = true;
-      }
+    const queue = getStaffPriorityQueue({
+      ...mockTestVenue,
+      incidents: [
+        ...mockTestVenue.incidents,
+        { id: 'i4', type: 'Lost guest', location: 'Sec 104', severity: 'Low', status: 'Open', timestamp: '12:04' },
+      ],
     });
+    const severityRank = { High: 3, Medium: 2, Low: 1 } as const;
+    const ranks = queue.map(item => severityRank[item.severity]);
+
+    expect(ranks).toEqual([...ranks].sort((first, second) => second - first));
+    expect(queue.some(item => item.severity === 'Low')).toBe(true);
+  });
+
+  it.each([
+    [49, []],
+    [50, ['Medium']],
+    [79, ['Medium']],
+    [80, ['High']],
+  ] as const)('classifies an open gate at %i%% in the priority queue', (percentage, expectedSeverities) => {
+    const queue = getStaffPriorityQueue({
+      ...mockTestVenue,
+      gates: [
+        { id: 'boundary', name: 'Boundary gate', pressure: 'Medium', percentage, isOpen: true, accessibleReady: true },
+      ],
+      zones: [],
+      incidents: [],
+    });
+
+    expect(queue.map(item => item.severity)).toEqual(expectedSeverities);
+  });
+
+  it.each([
+    [49, true],
+    [50, false],
+  ] as const)('only recommends a lower-pressure diversion target below 50%% (%i%%)', (targetPressure, shouldRecommend) => {
+    const actions = getRecommendedStaffActions({
+      ...mockTestVenue,
+      gates: [
+        { id: 'high', name: 'High gate', pressure: 'High', percentage: 90, isOpen: true, accessibleReady: false },
+        { id: 'target', name: 'Target gate', pressure: 'Medium', percentage: targetPressure, isOpen: true, accessibleReady: true },
+      ],
+      zones: [],
+      incidents: [],
+      transitStatus: [],
+      accessibilityRequests: [],
+    });
+
+    expect(actions.join(' ').includes('Target gate')).toBe(shouldRecommend);
   });
 
   it('grounds recommended actions in the simulated telemetry and uses safe wording', () => {

@@ -2,6 +2,7 @@ import React from 'react';
 import Meter from './Meter';
 import StaffServiceQueuePressure from './StaffServiceQueuePressure';
 import StatusChip from './StatusChip';
+import { getPressureTone } from '../logic/operations';
 import type { VenueData, ZoneData } from '../types';
 
 interface StaffTelemetryPanelProps {
@@ -11,12 +12,6 @@ interface StaffTelemetryPanelProps {
   criticalZones: ZoneData[];
   undercoveredZones: ZoneData[];
 }
-
-const getGateTone = (percentage: number): 'green' | 'amber' | 'red' => {
-  if (percentage >= 80) return 'red';
-  if (percentage >= 50) return 'amber';
-  return 'green';
-};
 
 export const StaffTelemetryPanel: React.FC<StaffTelemetryPanelProps> = ({
   venue,
@@ -55,7 +50,7 @@ export const StaffTelemetryPanel: React.FC<StaffTelemetryPanelProps> = ({
             <Meter
               value={gate.percentage}
               label={`${gate.name} simulated load`}
-              tone={getGateTone(gate.percentage)}
+              tone={getPressureTone(gate.percentage)}
             />
             <div className="staff-command__gate-meta">
               <span className={gate.isOpen ? 'staff-command__gate-state--open' : 'staff-command__gate-state--closed'}>

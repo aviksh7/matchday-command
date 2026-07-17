@@ -1,14 +1,13 @@
 import React from 'react';
 import Button from './Button';
 import SeverityBadge from './SeverityBadge';
+import { INCIDENT_STATUSES } from '../logic/operations';
 import type { IncidentData } from '../types';
 
 interface StaffIncidentStatusControlProps {
   incident: IncidentData;
   onStatusChange: (incidentId: string, status: IncidentData['status']) => void;
 }
-
-const INCIDENT_STATUSES: IncidentData['status'][] = ['Open', 'Dispatched', 'Resolved'];
 
 export const StaffIncidentStatusControl: React.FC<StaffIncidentStatusControlProps> = ({ incident, onStatusChange }) => {
   const noteId = `staff-incident-status-note-${incident.id}`;

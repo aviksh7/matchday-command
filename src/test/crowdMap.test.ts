@@ -45,6 +45,15 @@ describe('Crowd Map Helper Logic Functions', () => {
     expect(gate!.id).toBe('g2');
   });
 
+  it('returns no gate when every simulated gate is closed', () => {
+    const gate = getLeastCrowdedGate({
+      ...mockTestVenue,
+      gates: mockTestVenue.gates.map(item => ({ ...item, isOpen: false })),
+    });
+
+    expect(gate).toBeNull();
+  });
+
   it('correctly filters highest density zones (High and Critical)', () => {
     const highDensity = getHighestDensityZones(mockTestVenue);
     expect(highDensity).toHaveLength(2);

@@ -5,6 +5,7 @@ import {
   calculateAverageGatePressure,
   getHighestPriorityIncidents,
   getOverallVenueStatus,
+  getPressureTone,
   summarizeAccessibilityRequests,
 } from '../logic/operations';
 import Button from '../components/Button';
@@ -37,7 +38,7 @@ export const Home: React.FC<HomeProps> = ({ setCurrentPage, openCrowdMap }) => {
       value: `${averageGatePressure}%`,
       detail: `${openGateCount}/${selectedVenue.gates.length} gates open`,
       icon: 'venue',
-      tone: averageGatePressure >= 80 ? 'red' : averageGatePressure >= 50 ? 'amber' : 'green',
+      tone: getPressureTone(averageGatePressure),
     },
     {
       label: 'Active incidents',
@@ -51,7 +52,7 @@ export const Home: React.FC<HomeProps> = ({ setCurrentPage, openCrowdMap }) => {
       value: `${highestTransitPressure}%`,
       detail: 'Peak simulated node load',
       icon: 'train',
-      tone: highestTransitPressure >= 80 ? 'red' : highestTransitPressure >= 50 ? 'amber' : 'green',
+      tone: getPressureTone(highestTransitPressure),
     },
     {
       label: 'Access support',

@@ -1,0 +1,165 @@
+/* Shared only by the two lazy-loaded operations pages. Keep page-specific layout and visual variants local. */
+.staff-command,
+.incident-support {
+  min-width: 0;
+  gap: var(--space-6);
+}
+
+.staff-command__header,
+.incident-support__header {
+  display: flex;
+  min-width: 0;
+  gap: var(--space-5);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.staff-command__heading-copy h2,
+.incident-support__intro h2 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.staff-command__heading-copy p,
+.incident-support__intro p {
+  margin: var(--space-2) 0 0;
+  color: var(--paper-muted);
+  line-height: 1.55;
+}
+
+.staff-command__venue-control label,
+.incident-venue-control label {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.staff-command__grid,
+.incident-support__layout {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.staff-command__column,
+.incident-support__column {
+  min-width: 0;
+  gap: var(--space-6);
+}
+
+.staff-command__card,
+.incident-panel {
+  min-width: 0;
+  margin: 0;
+}
+
+.staff-command__card > h3,
+.staff-command__card-heading h3,
+.incident-panel h3 {
+  margin: 0;
+}
+
+.staff-command__card-heading,
+.staff-service-queues__heading,
+.incident-decision__header {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.staff-command__table-scroll,
+.incident-table-shell {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border: var(--border-paper);
+  border-radius: var(--radius-md);
+  overscroll-behavior-inline: contain;
+}
+
+.staff-command__table-scroll:focus-visible,
+.incident-table-shell:focus-visible {
+  outline-color: var(--cyan-paper);
+}
+
+.staff-command .staff-service-queues__table,
+.staff-command .staff-command__incident-table,
+.incident-queue__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.staff-service-queues__table caption,
+.staff-command__incident-table caption,
+.incident-queue__table caption {
+  color: var(--paper-muted);
+  text-align: left;
+}
+
+.staff-service-queues__table th,
+.staff-service-queues__table td,
+.staff-command__incident-table th,
+.staff-command__incident-table td,
+.incident-queue__table td,
+.incident-queue__table tbody th {
+  border-bottom: var(--border-paper);
+  text-align: left;
+}
+
+.staff-service-queues__table tbody tr:last-child > *,
+.staff-command__incident-table tbody tr:last-child > *,
+.incident-queue__table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.staff-command__incident-select,
+.incident-queue__select {
+  min-height: 44px;
+  color: var(--cyan-paper);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-mono);
+}
+
+.staff-command__incident-status,
+.incident-status {
+  display: inline-flex;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.staff-command__incident-status--open,
+.incident-status--open {
+  color: var(--red-paper);
+  background: #fae2de;
+}
+
+.staff-command__incident-status--dispatched,
+.incident-status--dispatched {
+  color: var(--amber-paper);
+  background: #fff0c2;
+}
+
+.staff-command__incident-status--resolved,
+.incident-status--resolved {
+  color: var(--green-paper);
+  background: #e4f2e5;
+}
+
+.staff-command__status-fieldset,
+.incident-status-control {
+  min-width: 0;
+  border: 0;
+}
+
+.staff-command__status-fieldset legend,
+.incident-status-control legend {
+  color: var(--paper-muted);
+  font-weight: 700;
+}

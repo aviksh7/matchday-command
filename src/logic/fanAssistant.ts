@@ -1,4 +1,5 @@
 import type { VenueData, AssistantResponse } from '../types';
+import { getLowestPressureOpenGate } from './operations';
 
 export type AssistantPromptKey = 
   | 'least-crowded-gate'
@@ -41,8 +42,8 @@ export const getSimulatedAssistantResponse = (
 
   switch (activeKey) {
     case 'least-crowded-gate': {
-      const openGates = venue.gates.filter(g => g.isOpen);
-      if (openGates.length === 0) {
+      const leastCrowded = getLowestPressureOpenGate(venue);
+      if (!leastCrowded) {
         return {
           answer: `All gates are currently showing as closed in the simulated system.`,
           action: `Please wait for announcements or approach stadium guest services for direct instructions.`,
@@ -51,7 +52,6 @@ export const getSimulatedAssistantResponse = (
         };
       }
       
-      const leastCrowded = [...openGates].sort((a, b) => a.percentage - b.percentage)[0];
       const allGatePressures = venue.gates.map(g => `${g.name} (${g.isOpen ? `${g.percentage}% load` : 'Closed'})`).join(', ');
 
       return {

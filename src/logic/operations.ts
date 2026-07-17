@@ -1,4 +1,29 @@
-import type { VenueData, IncidentData } from '../types';
+import type { VenueData, IncidentData, GateData } from '../types';
+
+export const PRESSURE_THRESHOLDS = {
+  ELEVATED: 50,
+  CRITICAL: 80,
+} as const;
+
+export const INCIDENT_STATUSES = ['Open', 'Dispatched', 'Resolved'] as const satisfies readonly IncidentData['status'][];
+
+export const INCIDENT_SEVERITY_WEIGHTS: Readonly<Record<IncidentData['severity'], number>> = {
+  High: 3,
+  Medium: 2,
+  Low: 1,
+};
+
+export const getPressureTone = (percentage: number): 'green' | 'amber' | 'red' => {
+  if (percentage >= PRESSURE_THRESHOLDS.CRITICAL) return 'red';
+  if (percentage >= PRESSURE_THRESHOLDS.ELEVATED) return 'amber';
+  return 'green';
+};
+
+export const getLowestPressureOpenGate = (venue: VenueData): GateData | null => {
+  const openGates = venue.gates.filter(gate => gate.isOpen);
+  if (openGates.length === 0) return null;
+  return [...openGates].sort((first, second) => first.percentage - second.percentage)[0];
+};
 
 /**
  * Calculates the average gate pressure percentage across all gates in the venue.
@@ -17,14 +42,8 @@ export const getHighestPriorityIncidents = (venue: VenueData): IncidentData[] =>
   
   const activeIncidents = venue.incidents.filter(inc => inc.status !== 'Resolved');
   
-  const severityWeights = {
-    'High': 3,
-    'Medium': 2,
-    'Low': 1
-  };
-  
   return [...activeIncidents].sort((a, b) => {
-    return severityWeights[b.severity] - severityWeights[a.severity];
+    return INCIDENT_SEVERITY_WEIGHTS[b.severity] - INCIDENT_SEVERITY_WEIGHTS[a.severity];
   });
 };
 
@@ -60,14 +79,14 @@ export const getOverallVenueStatus = (venue: VenueData): 'Normal' | 'Elevated' |
   const hasHighIncidents = venue.incidents.some(inc => inc.status !== 'Resolved' && inc.severity === 'High');
   const hasCriticalZones = venue.zones.some(z => z.density === 'Critical');
   
-  if (avgGatePressure > 80 || hasHighIncidents || hasCriticalZones) {
+  if (avgGatePressure > PRESSURE_THRESHOLDS.CRITICAL || hasHighIncidents || hasCriticalZones) {
     return 'Critical';
   }
   
   const hasMediumIncidents = venue.incidents.some(inc => inc.status !== 'Resolved' && inc.severity === 'Medium');
   const hasHighZones = venue.zones.some(z => z.density === 'High');
   
-  if (avgGatePressure > 50 || hasMediumIncidents || hasHighZones) {
+  if (avgGatePressure > PRESSURE_THRESHOLDS.ELEVATED || hasMediumIncidents || hasHighZones) {
     return 'Elevated';
   }
   

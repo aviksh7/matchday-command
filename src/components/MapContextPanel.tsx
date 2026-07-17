@@ -1,7 +1,11 @@
 import React from 'react';
 import type { VenueData } from '../types';
-import { calculateAverageGatePressure, getOverallVenueStatus } from '../logic/operations';
-import { getLeastCrowdedGate } from '../logic/crowdMap';
+import {
+  calculateAverageGatePressure,
+  getLowestPressureOpenGate,
+  getOverallVenueStatus,
+  getPressureTone,
+} from '../logic/operations';
 import type { MapSelection } from './StadiumMap';
 import Button from './Button';
 import FeedChip from './FeedChip';
@@ -17,12 +21,6 @@ interface MapContextPanelProps {
   onOpenIncidentSupport: () => void;
 }
 
-const meterTone = (value: number): 'green' | 'amber' | 'red' => {
-  if (value >= 80) return 'red';
-  if (value >= 50) return 'amber';
-  return 'green';
-};
-
 export const MapContextPanel: React.FC<MapContextPanelProps> = ({
   venue,
   selection,
@@ -32,7 +30,7 @@ export const MapContextPanel: React.FC<MapContextPanelProps> = ({
   const renderContent = () => {
     if (!selection) {
       const status = getOverallVenueStatus(venue);
-      const leastCrowdedGate = getLeastCrowdedGate(venue);
+      const leastCrowdedGate = getLowestPressureOpenGate(venue);
       const averageGatePressure = calculateAverageGatePressure(venue);
       const busiestDistricts = [...venue.zones]
         .sort((first, second) => second.occupancyPercentage - first.occupancyPercentage)
@@ -46,7 +44,7 @@ export const MapContextPanel: React.FC<MapContextPanelProps> = ({
             <p>{venue.locationName} · current simulated operational snapshot.</p>
           </div>
           <StatusChip status={status} theme="paper" label={`${status} venue status`} />
-          <Meter value={averageGatePressure} label="Average gate intake pressure" tone={meterTone(averageGatePressure)} />
+          <Meter value={averageGatePressure} label="Average gate intake pressure" tone={getPressureTone(averageGatePressure)} />
           <div className="map-context__callout">
             <Icon name="route" size={18} />
             <div>
@@ -78,7 +76,7 @@ export const MapContextPanel: React.FC<MapContextPanelProps> = ({
             <h3>{zone.name}</h3>
             <p>Simulated crowd-density district mapped to the current venue snapshot.</p>
           </div>
-          <Meter value={zone.occupancyPercentage} label="Simulated occupancy" tone={meterTone(zone.occupancyPercentage)} />
+          <Meter value={zone.occupancyPercentage} label="Simulated occupancy" tone={getPressureTone(zone.occupancyPercentage)} />
           <dl className="map-context__facts">
             <div><dt>Density</dt><dd>{zone.density}</dd></div>
             <div><dt>Volunteers</dt><dd>{zone.volunteerCount}</dd></div>
@@ -98,7 +96,7 @@ export const MapContextPanel: React.FC<MapContextPanelProps> = ({
             <h3>{gate.name}</h3>
             <p>{gate.isOpen ? 'Open in this simulated snapshot.' : 'Closed in this simulated snapshot.'}</p>
           </div>
-          <Meter value={gate.percentage} label="Simulated intake pressure" tone={meterTone(gate.percentage)} />
+          <Meter value={gate.percentage} label="Simulated intake pressure" tone={getPressureTone(gate.percentage)} />
           <dl className="map-context__facts">
             <div><dt>Pressure</dt><dd>{gate.pressure}</dd></div>
             <div><dt>Access lane</dt><dd>{gate.accessibleReady ? 'Accessibility-ready' : 'Standard'}</dd></div>
@@ -118,7 +116,7 @@ export const MapContextPanel: React.FC<MapContextPanelProps> = ({
             <h3>{transit.type}</h3>
             <p>Prototype departure-node conditions; no municipal feed is connected.</p>
           </div>
-          <Meter value={transit.crowdPressurePercentage} label="Simulated crowd pressure" tone={meterTone(transit.crowdPressurePercentage)} />
+          <Meter value={transit.crowdPressurePercentage} label="Simulated crowd pressure" tone={getPressureTone(transit.crowdPressurePercentage)} />
           <dl className="map-context__facts">
             <div><dt>Load</dt><dd>{transit.loadLevel}</dd></div>
             <div><dt>Status</dt><dd>{transit.status}</dd></div>

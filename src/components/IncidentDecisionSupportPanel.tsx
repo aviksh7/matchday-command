@@ -1,6 +1,7 @@
 import React from 'react';
 import Icon from './Icon';
 import type { IncidentSupportApiResponse, ResponseSource } from '../logic/apiClient';
+import { INCIDENT_STATUSES } from '../logic/operations';
 import type { IncidentData } from '../types';
 
 interface IncidentDecisionSupportPanelProps {
@@ -18,8 +19,6 @@ interface IncidentStatusControlProps {
   isLoading: boolean;
   onStatusChange: (incidentId: string, status: IncidentData['status']) => void;
 }
-
-const INCIDENT_STATUSES: IncidentData['status'][] = ['Open', 'Dispatched', 'Resolved'];
 
 const IncidentStatusControl: React.FC<IncidentStatusControlProps> = ({
   incident,

@@ -1,4 +1,5 @@
 import type { VenueData, IncidentData } from '../types';
+import { PRESSURE_THRESHOLDS } from './operations';
 
 export interface IncidentSupportSummary {
   situationSummary: string;
@@ -31,7 +32,7 @@ export const getRelatedVenueRisks = (incident: IncidentData, venue: VenueData): 
     venue.gates.forEach(gate => {
       const gateNameLower = gate.name.toLowerCase();
       if (locLower.includes(gateNameLower) || gateNameLower.includes(locLower)) {
-        if (gate.percentage >= 80) {
+        if (gate.percentage >= PRESSURE_THRESHOLDS.CRITICAL) {
           risks.push(`High crowd pressure at adjacent simulated gate: ${gate.name} (${gate.percentage}% simulated load).`);
         }
       }

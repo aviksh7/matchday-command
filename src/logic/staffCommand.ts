@@ -1,4 +1,9 @@
 import type { VenueData, ZoneData, IncidentData, PriorityQueueItem } from '../types';
+import {
+  getLowestPressureOpenGate,
+  INCIDENT_SEVERITY_WEIGHTS,
+  PRESSURE_THRESHOLDS,
+} from './operations';
 
 /**
  * Filter zones with 'Critical' or 'High' density levels.
@@ -47,7 +52,7 @@ export const getStaffPriorityQueue = (venue: VenueData): PriorityQueueItem[] => 
   // Add high gate pressures (>=80%)
   if (venue.gates) {
     venue.gates.forEach(gate => {
-      if (gate.isOpen && gate.percentage >= 80) {
+      if (gate.isOpen && gate.percentage >= PRESSURE_THRESHOLDS.CRITICAL) {
         queue.push({
           id: `gate-${gate.id}`,
           type: 'Gate Pressure',
@@ -55,7 +60,7 @@ export const getStaffPriorityQueue = (venue: VenueData): PriorityQueueItem[] => 
           details: `Simulated high load pressure: ${gate.percentage}%`,
           severity: 'High'
         });
-      } else if (gate.isOpen && gate.percentage >= 50) {
+      } else if (gate.isOpen && gate.percentage >= PRESSURE_THRESHOLDS.ELEVATED) {
         queue.push({
           id: `gate-${gate.id}`,
           type: 'Gate Pressure',
@@ -90,14 +95,9 @@ export const getStaffPriorityQueue = (venue: VenueData): PriorityQueueItem[] => 
     });
   }
 
-  // Sort queue by severity: High > Medium > Low
-  const severityWeights = {
-    'High': 3,
-    'Medium': 2,
-    'Low': 1
-  };
-
-  return queue.sort((a, b) => severityWeights[b.severity] - severityWeights[a.severity]);
+  return queue.sort((a, b) => (
+    INCIDENT_SEVERITY_WEIGHTS[b.severity] - INCIDENT_SEVERITY_WEIGHTS[a.severity]
+  ));
 };
 
 /**
@@ -126,11 +126,10 @@ export const getRecommendedStaffActions = (venue: VenueData): string[] => {
 
   // 3. Check high pressure gates and recommend redirecting to lowest pressure open gate
   if (venue.gates) {
-    const highPressureGates = venue.gates.filter(g => g.isOpen && g.percentage >= 80);
-    const openGates = venue.gates.filter(g => g.isOpen);
-    const leastCrowded = openGates.length > 0 ? [...openGates].sort((a, b) => a.percentage - b.percentage)[0] : null;
+    const highPressureGates = venue.gates.filter(g => g.isOpen && g.percentage >= PRESSURE_THRESHOLDS.CRITICAL);
+    const leastCrowded = getLowestPressureOpenGate(venue);
 
-    if (highPressureGates.length > 0 && leastCrowded && leastCrowded.percentage < 50) {
+    if (highPressureGates.length > 0 && leastCrowded && leastCrowded.percentage < PRESSURE_THRESHOLDS.ELEVATED) {
       highPressureGates.forEach(gate => {
         actions.push(`Simulated operational recommendation: Monitor bottleneck at ${gate.name} (${gate.percentage}% simulated pressure). Instruct static volunteers to guide inbound flow toward ${leastCrowded.name} (${leastCrowded.percentage}% simulated pressure).`);
       });

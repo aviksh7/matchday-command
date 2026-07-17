@@ -27,6 +27,21 @@ describe('Matchday Command Base Application', () => {
     expect(screen.getByText(/No external operational systems are connected/i)).toBeInTheDocument();
   });
 
+  it('exposes mobile navigation state and returns to Home through the brand control', async () => {
+    render(<App />);
+
+    const menuButton = screen.getByRole('button', { name: 'Menu' });
+    expect(menuButton).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(menuButton);
+    expect(menuButton).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fan Assistant' }));
+    expect(await screen.findByRole('heading', { level: 2, name: 'Fan Operations Assistant' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Matchday Command home' }));
+    expect(await screen.findByRole('heading', { level: 2, name: /See the whole matchday/i })).toBeInTheDocument();
+  });
+
   it('navigates from the homepage CTAs to Crowd Map and Fan Assistant', async () => {
     render(<App />);
 

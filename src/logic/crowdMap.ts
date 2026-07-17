@@ -1,15 +1,11 @@
 import type { VenueData, GateData, ZoneData } from '../types';
+import { getLowestPressureOpenGate } from './operations';
 
 /**
  * Find the open gate with the lowest simulated load percentage.
  * Ignores closed gates.
  */
-export const getLeastCrowdedGate = (venue: VenueData): GateData | null => {
-  if (!venue.gates) return null;
-  const openGates = venue.gates.filter(g => g.isOpen);
-  if (openGates.length === 0) return null;
-  return [...openGates].sort((a, b) => a.percentage - b.percentage)[0];
-};
+export const getLeastCrowdedGate = getLowestPressureOpenGate;
 
 /**
  * Filter zones with 'High' or 'Critical' density levels.

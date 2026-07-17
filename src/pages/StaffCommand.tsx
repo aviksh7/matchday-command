@@ -12,6 +12,7 @@ import {
   getUndercoveredZones,
 } from '../logic/staffCommand';
 import type { IncidentData, VenueData } from '../types';
+import '../styles/operations-shared.css';
 import '../styles/staff-command.css';
 
 export const StaffCommand: React.FC = () => {

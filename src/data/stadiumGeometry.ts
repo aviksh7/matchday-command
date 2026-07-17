@@ -1,5 +1,4 @@
 export interface DistrictGeometry {
-  position: 'north' | 'south' | 'east' | 'west';
   dataIndex: number;
   path: string;
   labelX: number;
@@ -17,10 +16,10 @@ export interface PointGeometry {
 export const STADIUM_VIEWBOX = '0 0 960 680';
 
 export const DISTRICT_GEOMETRY: DistrictGeometry[] = [
-  { position: 'north', dataIndex: 0, path: 'M285 170 C380 120 580 120 675 170 L610 245 C540 210 420 210 350 245 Z', labelX: 480, labelY: 176 },
-  { position: 'south', dataIndex: 1, path: 'M675 510 C580 560 380 560 285 510 L350 435 C420 470 540 470 610 435 Z', labelX: 480, labelY: 515 },
-  { position: 'east', dataIndex: 2, path: 'M675 170 C745 235 745 445 675 510 L610 435 C645 385 645 295 610 245 Z', labelX: 686, labelY: 338 },
-  { position: 'west', dataIndex: 3, path: 'M285 510 C215 445 215 235 285 170 L350 245 C315 295 315 385 350 435 Z', labelX: 274, labelY: 338 },
+  { dataIndex: 0, path: 'M285 170 C380 120 580 120 675 170 L610 245 C540 210 420 210 350 245 Z', labelX: 480, labelY: 176 },
+  { dataIndex: 1, path: 'M675 510 C580 560 380 560 285 510 L350 435 C420 470 540 470 610 435 Z', labelX: 480, labelY: 515 },
+  { dataIndex: 2, path: 'M675 170 C745 235 745 445 675 510 L610 435 C645 385 645 295 610 245 Z', labelX: 686, labelY: 338 },
+  { dataIndex: 3, path: 'M285 510 C215 445 215 235 285 170 L350 245 C315 295 315 385 350 435 Z', labelX: 274, labelY: 338 },
 ];
 
 export const GATE_GEOMETRY: PointGeometry[] = [

@@ -9,6 +9,7 @@ import {
   STADIUM_VIEWBOX,
   TRANSIT_GEOMETRY,
 } from '../data/stadiumGeometry';
+import { PRESSURE_THRESHOLDS } from '../logic/operations';
 import Icon from './Icon';
 
 export type MapFeatureKind = 'district' | 'gate' | 'transit' | 'incident';
@@ -132,7 +133,13 @@ export const StadiumMap: React.FC<StadiumMapProps> = ({ venue, selection, onSele
               const point = GATE_GEOMETRY[index % GATE_GEOMETRY.length];
               const feature: MapSelection = { kind: 'gate', id: gate.id };
               const selected = isSelected(selection, feature.kind, feature.id);
-              const pressureClass = !gate.isOpen ? 'closed' : gate.percentage >= 80 ? 'high' : gate.percentage >= 50 ? 'medium' : 'low';
+              const pressureClass = !gate.isOpen
+                ? 'closed'
+                : gate.percentage >= PRESSURE_THRESHOLDS.CRITICAL
+                  ? 'high'
+                  : gate.percentage >= PRESSURE_THRESHOLDS.ELEVATED
+                    ? 'medium'
+                    : 'low';
               return (
                 <g
                   key={gate.id}

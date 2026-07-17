@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { 
   calculateAverageGatePressure, 
   getHighestPriorityIncidents, 
+  getLowestPressureOpenGate,
   getOverallVenueStatus, 
+  getPressureTone,
   summarizeAccessibilityRequests 
 } from '../logic/operations';
 import type { VenueData } from '../types';
@@ -47,10 +49,38 @@ describe('Operations Helper Logic Functions', () => {
   });
 
   it('correctly filters and sorts active incidents by severity', () => {
-    const priority = getHighestPriorityIncidents(mockTestVenue);
-    expect(priority).toHaveLength(2);
-    expect(priority[0].id).toBe('i2'); // High severity should be first
-    expect(priority[1].id).toBe('i1'); // Medium severity second
+    const venue: VenueData = {
+      ...mockTestVenue,
+      incidents: [
+        { id: 'low', type: 'Lost item', location: 'Sec 100', severity: 'Low', status: 'Open', timestamp: '11:58' },
+        ...mockTestVenue.incidents,
+        { id: 'resolved-high', type: 'Resolved', location: 'Sec 103', severity: 'High', status: 'Resolved', timestamp: '11:50' },
+      ],
+    };
+
+    expect(getHighestPriorityIncidents(venue).map(incident => incident.id)).toEqual(['i2', 'i1', 'low']);
+  });
+
+  it.each([
+    [49, 'green'],
+    [50, 'amber'],
+    [79, 'amber'],
+    [80, 'red'],
+  ] as const)('maps %i%% pressure to the %s tone', (percentage, tone) => {
+    expect(getPressureTone(percentage)).toBe(tone);
+  });
+
+  it('selects the lowest-pressure open gate and ignores a lower closed gate', () => {
+    const gate = getLowestPressureOpenGate({
+      ...mockTestVenue,
+      gates: [
+        { id: 'closed', name: 'Closed', pressure: 'Low', percentage: 5, isOpen: false, accessibleReady: true },
+        { id: 'open-high', name: 'Open high', pressure: 'High', percentage: 80, isOpen: true, accessibleReady: false },
+        { id: 'open-low', name: 'Open low', pressure: 'Low', percentage: 20, isOpen: true, accessibleReady: true },
+      ],
+    });
+
+    expect(gate?.id).toBe('open-low');
   });
 
   it('correctly counts pending and active accessibility requests', () => {
@@ -81,5 +111,25 @@ describe('Operations Helper Logic Functions', () => {
       incidents: []
     };
     expect(getOverallVenueStatus(normalVenue)).toBe('Normal');
+  });
+
+  it.each([
+    [50, 'Normal'],
+    [51, 'Elevated'],
+    [80, 'Elevated'],
+    [81, 'Critical'],
+  ] as const)('preserves strict overall-status boundaries at %i%%', (percentage, expectedStatus) => {
+    const venue: VenueData = {
+      ...mockTestVenue,
+      gates: [
+        { id: 'boundary', name: 'Boundary gate', pressure: 'Medium', percentage, isOpen: true, accessibleReady: true },
+      ],
+      zones: [
+        { id: 'neutral', name: 'Neutral zone', density: 'Low', occupancyPercentage: 20, volunteerCount: 12 },
+      ],
+      incidents: [],
+    };
+
+    expect(getOverallVenueStatus(venue)).toBe(expectedStatus);
   });
 });
