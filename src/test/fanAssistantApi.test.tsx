@@ -47,7 +47,7 @@ describe('Fan Assistant API Integration & Fallback Flow', () => {
       ok: true,
       json: async () => ({
         summary: 'Cloud Run **Vertex AI** guidance answer.',
-        recommendedAction: 'Dispatch concourse team.',
+        recommendedAction: 'Use Gate C and confirm posted venue guidance.',
         simulatedDataUsed: ['Gate A Pressure 88%'],
         limitations: 'Simulated data only.'
       })
@@ -64,7 +64,7 @@ describe('Fan Assistant API Integration & Fallback Flow', () => {
     await waitFor(() => {
       expect(screen.getByText((_, element) => element?.tagName === 'P' && element.textContent === 'Cloud Run Vertex AI guidance answer.')).toBeInTheDocument();
       expect(screen.getByText('Vertex AI', { selector: 'strong' })).toBeInTheDocument();
-      expect(screen.getByText('Dispatch concourse team.')).toBeInTheDocument();
+      expect(screen.getByText('Use Gate C and confirm posted venue guidance.')).not.toHaveTextContent(/\bdispatch\b/i);
       expect(screen.getByText(/Vertex AI via Cloud Run/i, { selector: '.fan-source-badge' })).toBeInTheDocument();
     });
   });

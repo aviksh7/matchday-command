@@ -8,22 +8,24 @@ This document describes the implemented security and privacy boundaries of Match
 - The Cloud Run Node.js API authenticates to Vertex AI through its attached dedicated runtime service account and Application Default Credentials (ADC).
 - The runtime service account has the Vertex AI permissions required by the deployed service. No downloadable runtime service-account key is used.
 - `GOOGLE_CLOUD_PROJECT` is explicitly supplied through deployment configuration. ADC provides authentication credentials; it does not populate that environment variable.
-- The former Gemini API-key integration and its legacy Secret Manager secret were deleted. Production does not use either path.
+- Current application code and deployment configuration do not use or map the former Gemini API-key or legacy Secret Manager path.
 
 ## Request boundary and safeguards
 
-Firebase Hosting serves the browser application and routes same-origin `/api/**` requests to Cloud Run. For direct browser requests, the API uses an exact origin allowlist for local development and the two Firebase Hosting domains. CORS is a browser-origin policy, not user authentication.
+Firebase Hosting serves the browser application and routes same-origin `/api/**` requests to Cloud Run. For direct browser requests, the API accepts a fixed origin allowlist for local development and the two Firebase Hosting domains plus a tightly anchored pattern for this project's lowercase Firebase preview channels. CORS is a browser-origin policy, not user authentication.
 
 The API implements:
 
 - a 10 KB JSON request-body limit;
-- maximum lengths for user query, incident, venue, and simulated-context fields;
-- rejection of a small set of obvious prompt-injection patterns;
-- a basic in-memory rate limit of 30 non-health requests per minute per observed client address and container instance;
-- structured response-schema checks on the server and again in the browser;
-- generic JSON error responses that do not expose model errors, credentials, stack traces, or internal configuration.
+- strict string/object shapes plus maximum serialized lengths for user query, incident, venue, and simulated-context fields;
+- inspection of the same serialized nested context used in prompts for a small set of obvious prompt-injection patterns;
+- a basic in-memory rate limit of 30 non-health requests per minute per observed client address and container instance, with a 10,000-client-key cap, expired-entry pruning, and fail-closed behavior at capacity;
+- a 15-second Vertex HTTP deadline, below the browser's 20-second fallback deadline;
+- required nonblank structured response-schema checks on the server and again in the browser;
+- controlled JSON responses for malformed input, unsupported API paths, generator failures, and invalid output without exposing model errors, credentials, stack traces, or internal configuration;
+- disabled `X-Powered-By` plus `X-Content-Type-Options`, `Referrer-Policy`, and a restrictive `Permissions-Policy` on API and Hosting responses.
 
-The in-memory rate limiter is basic abuse and cost protection. It is not distributed across Cloud Run instances and should not be described as a complete abuse-prevention system.
+The injection filter and in-memory rate limiter are basic safeguards. The limiter is not distributed across Cloud Run instances and should not be described as a complete abuse-prevention system.
 
 ## Data handling and user responsibility
 

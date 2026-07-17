@@ -12,17 +12,24 @@ Attempt 2 began from the verified checkpoint below:
 | Backend | 1 | 18 |
 | **Checkpoint total** | **17** | **98** |
 
-The table below records the verified Attempt 2 submission-candidate result.
+The table below records the final locally verified submission-candidate result.
 
 Submission-candidate verification:
 
 | Suite | Test files | Tests |
 | --- | ---: | ---: |
-| Frontend | 16 | 105 |
-| Backend | 1 | 19 |
-| **Current verified total** | **17** | **124** |
+| Frontend | 17 | 139 |
+| Backend | 2 | 79 |
+| **Current verified total** | **19** | **218** |
 
 These tests run locally with cloud clients mocked; they are not evidence of a production-system call.
+
+Final V8 coverage also clears the configured fail-under thresholds:
+
+| Suite | Statements | Branches | Functions | Lines | Enforced minimums |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Frontend | **92.17%** | **78.68%** | **94.07%** | **94.90%** | 90 / 76 / 92 / 94 |
+| Server | **92.40%** | **94.92%** | **96.42%** | **92.15%** | 86 / 88 / 85 / 87 |
 
 ## Commands
 
@@ -33,6 +40,7 @@ npm run test        # frontend Vitest suite
 npm run test:server # backend Vitest/Supertest suite
 npm run test:all    # frontend and backend suites
 npm run check       # lint, build, and all tests
+npm run check:coverage # frontend and server V8 coverage thresholds
 ```
 
 ## Major automated behaviors covered
@@ -41,7 +49,9 @@ npm run check       # lint, build, and all tests
 - simulated venue-data invariants;
 - gate pressure, crowd density, service-queue pressure, accessibility, staffing, volunteer grounding, and priority calculations;
 - pointer and keyboard stadium-map interaction, including Enter, Space, and Escape;
+- validated local map-incident handoff into Incident Support, including invalid-context rejection, same-page reset, and absence of an automatic request;
 - deterministic Fan Assistant and Incident Support outputs and safety language;
+- request-grounded Fan accessibility guidance plus Staff accessibility-request details and human-review/no-dispatch boundaries;
 - cloud-success, timeout/network/server failure, malformed response, invalid schema, loading, disabled-state, and stale-request paths;
 - visible `Vertex AI via Cloud Run` and `Local deterministic fallback` source labels;
 - API client payload compaction, request limits, timeout handling, and response validation;
@@ -61,7 +71,7 @@ Real Vertex AI testing is a separate, manual activity requiring local ADC and ex
 
 ## Continuous integration gates
 
-Both Firebase Hosting GitHub workflows use Node 22, install frontend and server dependencies with `npm ci`, and run `npm run check` before a live or preview Hosting deployment step. A failed lint, build, frontend test, or backend test prevents that workflow from reaching deployment.
+Both Firebase Hosting GitHub workflows use Node 22, install frontend and server dependencies with `npm ci`, and run `npm run check` plus `npm run check:coverage` before a live or preview Hosting deployment step. A failed lint, build, test, or coverage threshold prevents that workflow from reaching deployment.
 
 ## Manual production smoke-test checklist
 
@@ -69,10 +79,10 @@ Use the public application at <https://matchday-command-2026.web.app>:
 
 1. Confirm the persistent simulated-prototype strip appears and the primary navigation works.
 2. Select a venue on Home, open Crowd Map, and confirm the selected snapshot carries through.
-3. On Crowd Map, Tab to a feature, select with Enter and Space, and clear with Escape.
-4. In Fan Assistant, submit a quick prompt and confirm the result shows a source label plus a simulation/limitation notice.
-5. Review Staff Command gate, crowd, service-queue, transit-pressure, sustainability, accessibility, and incident panels as simulated snapshot information.
-6. In Incident Support, select an incident and confirm the output is labeled as Vertex AI or local fallback, described as a draft, and accompanied by visible limitations.
+3. On Crowd Map, Tab to an incident, select with Enter or Space, open Incident Support, and confirm the exact simulated venue/incident context is preselected; use Escape to clear a map selection.
+4. In Fan Assistant, request accessibility guidance and confirm the result uses local request locations/statuses plus a source and limitation notice.
+5. Review Staff Command gate, crowd, service-queue, transit-pressure, sustainability, accessibility-request, and incident panels; confirm the request and recommendation review boundaries are adjacent and explicit.
+6. In Incident Support, confirm the selected or newly chosen incident output is labeled as Vertex AI or local fallback, described as a draft, and accompanied by visible limitations.
 7. Open Project Details and verify the product links, architecture flow, mode descriptions, Floodlit explanation, and limitations.
 8. Inspect Project Details at approximately 390 px, 768 px, and a standard laptop width; confirm readable headings, usable links, visible focus, and no horizontal page overflow.
 9. Confirm no page claims official access, continuously updating telemetry, real routing, transit departure information, automatic dispatch, or authorized announcements.

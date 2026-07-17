@@ -11,7 +11,7 @@ Matchday Command presents local simulated venue snapshots through two product mo
 ### Fan Mode
 
 - Queries about lower-pressure open gates and lower-wait simulated services.
-- Accessibility-ready gate and support-point guidance.
+- Accessibility-ready gate and local support-request context grounded in the selected simulated venue.
 - Simulated transit pressure/status comparisons and egress cautions.
 - Simulated sustainability indicators and tips.
 - A limited translation demonstration with a fixed Spanish/French local fallback sample.
@@ -21,10 +21,10 @@ Fan guidance is not real routing, verified accessibility information, a transit 
 
 ### Operations Mode
 
-- Simulated gate pressure, crowd density, locally derived service-queue pressure, volunteer coverage, accessibility-request, transit-pressure, and sustainability panels.
-- A locally calculated priority queue and deterministic recommendations.
+- Simulated gate pressure, crowd density, locally derived service-queue pressure, volunteer coverage, accessibility-request, transit-pressure, and sustainability panels. Accessibility requests expose type, status, location, and logged time.
+- A locally calculated priority queue and review-gated deterministic decision-support options.
 - A local incident list with in-memory status changes.
-- Existing-incident selection and a custom prototype scenario builder.
+- Existing-incident selection, a validated local Crowd Map venue/incident handoff, and a custom prototype scenario builder.
 - Vertex AI or deterministic local response-planning drafts for incidents.
 
 Operational actions, briefings, and announcement text are drafts requiring qualified human review. The application does not dispatch staff, notify fans, control signage, publish announcements, or contact emergency services.
@@ -52,6 +52,7 @@ Both paths preserve simulation wording. The UI identifies `Vertex AI via Cloud R
 
 - Three local demo venues provide fictional capacities, gates, zones, concessions, incidents, accessibility requests, transit pressure/status, and sustainability values.
 - Venue selection and incident status changes are browser state and are not persisted.
+- Crowd Map handoff state is validated, local, and ephemeral. It preselects Incident Support context without an automatic cloud request or operational action.
 - The application has no user authentication or application database.
 - Cloud AI queries are processed by Cloud Run and Vertex AI; the application does not intentionally write queries or generated responses to an application database.
 
@@ -61,6 +62,7 @@ Both paths preserve simulation wording. The UI identifies `Vertex AI via Cloud R
 | --- | --- |
 | Selected simulated venue snapshots | Implemented |
 | Schematic keyboard-operable stadium map | Implemented |
+| Local map-incident handoff into Incident Support | Implemented without automatic network activity |
 | Fan guidance and operations calculations | Implemented from local data |
 | Vertex AI Fan Assistant and Incident Support | Implemented through Cloud Run |
 | Deterministic local fallback for both AI flows | Implemented |

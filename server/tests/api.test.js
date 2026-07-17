@@ -536,6 +536,7 @@ describe('Matchday Command API Endpoints', () => {
       expect(promptCaptured).toContain('"name":"Gate A","percentage":20');
       expect(promptCaptured).toContain('Where is the least crowded gate?');
       expect(systemInstructionCaptured).toContain('simulated prototype telemetry');
+      expect(systemInstructionCaptured).toContain('Do not tell the fan to dispatch, assign, deploy, or command staff');
       expect(systemInstructionCaptured).not.toContain('GEMINI_API_KEY');
     });
 

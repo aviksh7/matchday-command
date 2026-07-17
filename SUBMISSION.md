@@ -35,10 +35,10 @@ The full architecture, challenge mapping, evidence, setup, and limitations are m
 
 1. Open the live application and confirm the persistent simulated-prototype notice.
 2. Select a venue on Home and open its Crowd Map.
-3. Select map features with a pointer and keyboard; use Escape to clear.
-4. Run a Fan Assistant prompt and inspect the source and limitations labels.
-5. Review Staff Command as a selected simulated venue snapshot, including the locally derived service-queue pressure panel.
-6. Select an Incident Support item and inspect the structured draft, source label, and visible limitations.
+3. Select a map incident with a pointer or keyboard, open Incident Support, and confirm the exact local venue/incident context is preselected; use Escape to clear a map selection.
+4. Ask Fan Assistant for accessibility guidance and confirm its answer uses local request locations/statuses with source and limitation labels.
+5. Review Staff Command's locally derived service queues, accessibility-request details, and adjacent human-review/no-contact/no-dispatch boundaries.
+6. In Incident Support, inspect the selected or newly chosen structured draft, source label, and visible limitations.
 7. Open Project Details for the concise product, architecture, resilience, design, evidence, and limitation summary.
 
 Automated verification instructions and the latest test inventory are in [TESTING.md](TESTING.md). Security and privacy details are in [SECURITY.md](SECURITY.md).

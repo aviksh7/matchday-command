@@ -63,9 +63,10 @@ This file preserves the project's incremental development history while recordin
 - [x] Add dedicated Project Details coverage, bringing the verified result to 77 frontend and 18 backend tests (95 total).
 - [x] Pass Node 22 lint, build, test, diff, stale-claim, and responsive inspection checks.
 
-## Remaining Attempt 2 work
+## Historical Attempt 2 follow-up status
 
-- [ ] Perform the final public submission smoke test and re-verify documentation counts during the final submission pass.
-- [ ] Address any later evaluator feedback only in separately approved milestones.
+- Final documentation counts were reverified during the later local final-attempt pass.
+- Public smoke testing, deployment, and submission remain owner-controlled release activities outside the local verification contract.
+- Any later evaluator feedback belongs in a separately approved milestone.
 
 No later milestone should be described as complete before its implementation and verification evidence exists.
