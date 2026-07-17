@@ -71,6 +71,24 @@ describe('apiClient', () => {
       })).toBe(false);
     });
 
+    it('isValidFanAssistantResponse should reject empty arrays and whitespace-only data entries', () => {
+      const validResponse = {
+        summary: 'Summary',
+        recommendedAction: 'Action',
+        simulatedDataUsed: ['Gate A'],
+        limitations: 'Simulated'
+      };
+
+      expect(isValidFanAssistantResponse({
+        ...validResponse,
+        simulatedDataUsed: []
+      })).toBe(false);
+      expect(isValidFanAssistantResponse({
+        ...validResponse,
+        simulatedDataUsed: ['Gate A', '   ']
+      })).toBe(false);
+    });
+
     it('isValidIncidentSupportResponse should validate correct Incident Support response schema', () => {
       expect(isValidIncidentSupportResponse({
         situationSummary: 'Valid situation',
@@ -96,6 +114,37 @@ describe('apiClient', () => {
         crowdTransitNote: 'Transit',
         simulatedDataUsed: ['Telemetry'],
         limitations: 'Simulated'
+      })).toBe(false);
+    });
+
+    it('isValidIncidentSupportResponse should reject empty arrays and whitespace-only array entries', () => {
+      const validResponse = {
+        situationSummary: 'Valid situation',
+        priorityLevel: 'High',
+        recommendedActions: ['Action 1'],
+        volunteerBriefing: 'Briefing',
+        fanAnnouncementDraft: 'Announcement',
+        accessibilityNote: 'Note',
+        crowdTransitNote: 'Transit',
+        simulatedDataUsed: ['Telemetry'],
+        limitations: 'Simulated'
+      };
+
+      expect(isValidIncidentSupportResponse({
+        ...validResponse,
+        recommendedActions: []
+      })).toBe(false);
+      expect(isValidIncidentSupportResponse({
+        ...validResponse,
+        recommendedActions: ['Action 1', '\t']
+      })).toBe(false);
+      expect(isValidIncidentSupportResponse({
+        ...validResponse,
+        simulatedDataUsed: []
+      })).toBe(false);
+      expect(isValidIncidentSupportResponse({
+        ...validResponse,
+        simulatedDataUsed: ['Telemetry', '\n']
       })).toBe(false);
     });
   });

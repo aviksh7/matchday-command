@@ -6,7 +6,7 @@ export default defineConfig({
     environment: 'node',
     coverage: {
       provider: 'v8',
-      include: ['app.js', 'client.js', 'index.js'],
+      include: ['app.js', 'client.js', 'generator.js', 'index.js'],
       exclude: [
         'tests/**',
         '**/*.test.js',

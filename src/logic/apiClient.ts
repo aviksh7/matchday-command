@@ -46,6 +46,11 @@ export const getApiBaseUrl = (): string => {
   return import.meta.env.VITE_API_BASE_URL || '';
 };
 
+const isNonEmptyStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value)
+  && value.length > 0
+  && value.every(item => typeof item === 'string' && item.trim().length > 0);
+
 /**
  * Validates whether the given data conforms strictly to the FanAssistantApiResponse schema.
  */
@@ -55,8 +60,7 @@ export const isValidFanAssistantResponse = (data: unknown): data is FanAssistant
 
   if (typeof obj.summary !== 'string' || obj.summary.trim().length === 0) return false;
   if (typeof obj.recommendedAction !== 'string' || obj.recommendedAction.trim().length === 0) return false;
-  if (!Array.isArray(obj.simulatedDataUsed)) return false;
-  if (!obj.simulatedDataUsed.every(item => typeof item === 'string' && item.trim().length > 0)) return false;
+  if (!isNonEmptyStringArray(obj.simulatedDataUsed)) return false;
   if (typeof obj.limitations !== 'string' || obj.limitations.trim().length === 0) return false;
 
   return true;
@@ -72,14 +76,12 @@ export const isValidIncidentSupportResponse = (data: unknown): data is IncidentS
   const priorityLevels = ['Low', 'Medium', 'High'];
   if (typeof obj.situationSummary !== 'string' || obj.situationSummary.trim().length === 0) return false;
   if (typeof obj.priorityLevel !== 'string' || !priorityLevels.includes(obj.priorityLevel)) return false;
-  if (!Array.isArray(obj.recommendedActions)) return false;
-  if (!obj.recommendedActions.every(item => typeof item === 'string' && item.trim().length > 0)) return false;
+  if (!isNonEmptyStringArray(obj.recommendedActions)) return false;
   if (typeof obj.volunteerBriefing !== 'string' || obj.volunteerBriefing.trim().length === 0) return false;
   if (typeof obj.fanAnnouncementDraft !== 'string' || obj.fanAnnouncementDraft.trim().length === 0) return false;
   if (typeof obj.accessibilityNote !== 'string' || obj.accessibilityNote.trim().length === 0) return false;
   if (typeof obj.crowdTransitNote !== 'string' || obj.crowdTransitNote.trim().length === 0) return false;
-  if (!Array.isArray(obj.simulatedDataUsed)) return false;
-  if (!obj.simulatedDataUsed.every(item => typeof item === 'string' && item.trim().length > 0)) return false;
+  if (!isNonEmptyStringArray(obj.simulatedDataUsed)) return false;
   if (typeof obj.limitations !== 'string' || obj.limitations.trim().length === 0) return false;
 
   return true;

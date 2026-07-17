@@ -1,5 +1,6 @@
 import { createVertexClient } from './client.js';
 import { createApp } from './app.js';
+import { createGenerateContentFn } from './generator.js';
 import dotenv from 'dotenv';
 
 // Load local environment variables for development.
@@ -16,23 +17,7 @@ try {
   process.exit(1);
 }
 
-/**
- * Generation function mapping to the Vertex AI GoogleGenAI client.
- */
-const generateContentFn = async (prompt, systemInstruction, responseSchema) => {
-  const response = await ai.models.generateContent({
-    model: 'gemini-3.5-flash',
-    contents: prompt,
-    config: {
-      systemInstruction,
-      responseMimeType: 'application/json',
-      responseSchema,
-      temperature: 0.1,
-      maxOutputTokens: 1024
-    }
-  });
-  return response.text;
-};
+const generateContentFn = createGenerateContentFn(ai);
 
 // Instantiate and start Express application
 const app = createApp({ generateContentFn });

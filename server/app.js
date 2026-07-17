@@ -1,27 +1,125 @@
 import express from 'express';
 import cors from 'cors';
 
-const allowedOrigins = [
+const allowedOrigins = new Set([
   'http://localhost:5173',
   'https://matchday-command-2026.web.app',
   'https://matchday-command-2026.firebaseapp.com'
-];
+]);
+
+const firebasePreviewOriginPattern = /^https:\/\/matchday-command-2026--[a-z0-9]+(?:-[a-z0-9]+)*\.web\.app$/;
+const DEFAULT_RATE_LIMIT_MAX_CLIENTS = 10_000;
+
+const securityHeaders = {
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()'
+};
+
+const isAllowedOrigin = (origin) => (
+  !origin || allowedOrigins.has(origin) || firebasePreviewOriginPattern.test(origin)
+);
+
+const isJsonRecord = (value) => (
+  value !== null && typeof value === 'object' && !Array.isArray(value)
+);
+
+const validateAndSerializeField = (field, maxLength, name, expectedType = 'string') => {
+  if (field === undefined || field === null) {
+    return { error: `${name} is required.` };
+  }
+
+  const expectsObject = expectedType === 'object';
+  if (expectsObject ? !isJsonRecord(field) : typeof field !== 'string') {
+    return { error: `${name} must be ${expectsObject ? 'a JSON object' : 'a string'}.` };
+  }
+
+  if (expectsObject && Object.keys(field).length === 0) {
+    return { error: `${name} cannot be empty.` };
+  }
+
+  // Serialize structured input once, then reuse this exact bounded representation
+  // for injection inspection and prompt assembly.
+  const serialized = expectsObject ? JSON.stringify(field) : field;
+  if (serialized.trim().length === 0) {
+    return { error: `${name} cannot be empty.` };
+  }
+  if (serialized.length > maxLength) {
+    return { error: `${name} exceeds the maximum allowed length of ${maxLength} characters.` };
+  }
+  return { value: serialized };
+};
+
+const detectPromptInjection = (text) => {
+  const lowercase = text.toLowerCase();
+  return (
+    lowercase.includes('ignore all previous') ||
+    lowercase.includes('system prompt') ||
+    lowercase.includes('ignore safety') ||
+    lowercase.includes('bypass instructions') ||
+    lowercase.includes('expose api key') ||
+    lowercase.includes('gemini_api_key')
+  );
+};
+
+const parseModelJson = (responseText) => {
+  try {
+    return { success: true, value: JSON.parse(responseText) };
+  } catch {
+    return { success: false };
+  }
+};
+
+const isNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
+const isNonEmptyStringArray = (value) => (
+  Array.isArray(value) && value.length > 0 && value.every(item => isNonEmptyString(item))
+);
+
+const isValidFanResponse = (value) => (
+  isJsonRecord(value) &&
+  isNonEmptyString(value.summary) &&
+  isNonEmptyString(value.recommendedAction) &&
+  isNonEmptyStringArray(value.simulatedDataUsed) &&
+  isNonEmptyString(value.limitations)
+);
+
+const isValidIncidentResponse = (value) => (
+  isJsonRecord(value) &&
+  isNonEmptyString(value.situationSummary) &&
+  ['Low', 'Medium', 'High'].includes(value.priorityLevel) &&
+  isNonEmptyStringArray(value.recommendedActions) &&
+  isNonEmptyString(value.volunteerBriefing) &&
+  isNonEmptyString(value.fanAnnouncementDraft) &&
+  isNonEmptyString(value.accessibilityNote) &&
+  isNonEmptyString(value.crowdTransitNote) &&
+  isNonEmptyStringArray(value.simulatedDataUsed) &&
+  isNonEmptyString(value.limitations)
+);
 
 /**
  * Creates the Express application with dependency-injected Vertex AI generation.
  */
-export function createApp({ generateContentFn, rateLimitWindowMs = 60 * 1000, rateLimitMax = 30 }) {
+export function createApp({
+  generateContentFn,
+  rateLimitWindowMs = 60 * 1000,
+  rateLimitMax = 30,
+  rateLimitMaxClients = DEFAULT_RATE_LIMIT_MAX_CLIENTS,
+  rateLimitClientKeyFn = req => req.ip || req.socket.remoteAddress || 'unknown'
+}) {
   const app = express();
 
-  // Basic abuse and cost protection: limit request payload to 10kb
-  app.use(express.json({ limit: '10kb' }));
+  app.disable('x-powered-by');
+  app.use((_req, res, next) => {
+    res.set(securityHeaders);
+    next();
+  });
 
   // CORS Configuration: Exact allowlist only (no '*' wildcard).
   // Firebase Hosting routes production /api/** requests to Cloud Run under
   // the same origin. The allowlist protects supported direct browser requests.
   app.use(cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (isAllowedOrigin(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -30,31 +128,52 @@ export function createApp({ generateContentFn, rateLimitWindowMs = 60 * 1000, ra
     credentials: true
   }));
 
+  // Basic abuse and cost protection: limit request payload to 10kb.
+  // CORS runs first so supported browser origins can read controlled parser errors.
+  app.use(express.json({ limit: '10kb' }));
+
   // Lightweight in-memory rate limiting for basic abuse protection
   const rateLimits = new Map();
+  const sendRateLimitResponse = (res) => res.status(429).json({
+    error: 'Too Many Requests',
+    message: 'Rate limit exceeded. Please try again later.'
+  });
+
+  const pruneExpiredRateLimits = (now) => {
+    for (const [clientKey, timestamps] of rateLimits.entries()) {
+      const recent = timestamps.filter(timestamp => now - timestamp < rateLimitWindowMs);
+      if (recent.length === 0) {
+        rateLimits.delete(clientKey);
+      } else {
+        rateLimits.set(clientKey, recent);
+      }
+    }
+  };
+
   app.use((req, res, next) => {
     // Exclude health check from rate limits
     if (req.path === '/health') {
       return next();
     }
 
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const clientKey = rateLimitClientKeyFn(req) || 'unknown';
     const now = Date.now();
 
-    if (!rateLimits.has(ip)) {
-      rateLimits.set(ip, []);
+    if (!rateLimits.has(clientKey) && rateLimits.size >= rateLimitMaxClients) {
+      pruneExpiredRateLimits(now);
+      if (rateLimits.size >= rateLimitMaxClients) {
+        return sendRateLimitResponse(res);
+      }
     }
 
-    const history = rateLimits.get(ip).filter(timestamp => now - timestamp < rateLimitWindowMs);
+    const history = (rateLimits.get(clientKey) || [])
+      .filter(timestamp => now - timestamp < rateLimitWindowMs);
     if (history.length >= rateLimitMax) {
-      return res.status(429).json({
-        error: 'Too Many Requests',
-        message: 'Rate limit exceeded. Please try again later.'
-      });
+      return sendRateLimitResponse(res);
     }
 
     history.push(now);
-    rateLimits.set(ip, history);
+    rateLimits.set(clientKey, history);
     next();
   });
 
@@ -66,35 +185,6 @@ export function createApp({ generateContentFn, rateLimitWindowMs = 60 * 1000, ra
     });
   });
 
-  // Helper validation for text fields
-  const validateText = (field, maxLength, name) => {
-    if (field === undefined || field === null) {
-      return `${name} is required.`;
-    }
-    const str = typeof field === 'object' ? JSON.stringify(field) : String(field);
-    if (str.trim().length === 0) {
-      return `${name} cannot be empty.`;
-    }
-    if (str.length > maxLength) {
-      return `${name} exceeds the maximum allowed length of ${maxLength} characters.`;
-    }
-    return null;
-  };
-
-  // Helper to detect obvious prompt injection patterns
-  const detectPromptInjection = (text) => {
-    if (!text) return false;
-    const lowercase = String(text).toLowerCase();
-    return (
-      lowercase.includes('ignore all previous') ||
-      lowercase.includes('system prompt') ||
-      lowercase.includes('ignore safety') ||
-      lowercase.includes('bypass instructions') ||
-      lowercase.includes('expose api key') ||
-      lowercase.includes('gemini_api_key')
-    );
-  };
-
   // POST /api/fan-assistant
   app.post('/api/fan-assistant', async (req, res) => {
     // 1. Generator Check
@@ -105,22 +195,38 @@ export function createApp({ generateContentFn, rateLimitWindowMs = 60 * 1000, ra
       });
     }
 
+    if (!isJsonRecord(req.body)) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Request body must be a JSON object.'
+      });
+    }
+
     const { userQuery, venue, simulatedVenueContext } = req.body;
 
     // 2. Input Validation
-    const queryErr = validateText(userQuery, 500, 'userQuery');
-    const venueErr = validateText(venue, 1000, 'venue');
-    const contextErr = validateText(simulatedVenueContext, 4000, 'simulatedVenueContext');
+    const queryValidation = validateAndSerializeField(userQuery, 500, 'userQuery');
+    const venueValidation = validateAndSerializeField(venue, 1000, 'venue', 'object');
+    const contextValidation = validateAndSerializeField(
+      simulatedVenueContext,
+      4000,
+      'simulatedVenueContext',
+      'object'
+    );
 
-    if (queryErr || venueErr || contextErr) {
+    if (queryValidation.error || venueValidation.error || contextValidation.error) {
       return res.status(400).json({
         error: 'Bad Request',
-        message: queryErr || venueErr || contextErr
+        message: queryValidation.error || venueValidation.error || contextValidation.error
       });
     }
 
     // 3. Prompt Injection Safeguard
-    if (detectPromptInjection(userQuery) || detectPromptInjection(venue) || detectPromptInjection(simulatedVenueContext)) {
+    if (
+      detectPromptInjection(queryValidation.value) ||
+      detectPromptInjection(venueValidation.value) ||
+      detectPromptInjection(contextValidation.value)
+    ) {
       return res.status(400).json({
         error: 'Safety Rejection',
         message: 'Request rejected due to potential prompt-injection attempt.'
@@ -141,13 +247,13 @@ You must adhere to the following safety rules:
 9. If the user explicitly requests one or more target languages, keep the JSON property names in English and the response schema unchanged, but write every user-facing prose value in the requested target language or languages. This applies to "summary", "recommendedAction", "limitations", and every "simulatedDataUsed" entry wherever it contains a prose label. Preserve venue names, identifiers, quantities, percentages, and factual telemetry accurately. Preserve the full simulation-grounding and limitation meaning; "limitations" must still state that this is a translation demonstration and that language coverage and translation accuracy are not guaranteed. This rule applies only to explicit translation or target-language requests.`;
 
     const prompt = `[SIMULATED VENUE DATA]
-${typeof venue === 'object' ? JSON.stringify(venue) : venue}
+${venueValidation.value}
 
 [SIMULATED VENUE CONTEXT]
-${typeof simulatedVenueContext === 'object' ? JSON.stringify(simulatedVenueContext) : simulatedVenueContext}
+${contextValidation.value}
 
 [UNTRUSTED USER QUERY]
-${userQuery}
+${queryValidation.value}
 
 Instructions:
 Evaluate the fan's query strictly using the simulated venue data and context provided above.
@@ -160,6 +266,7 @@ Return a structured JSON object matching the requested schema.`;
         recommendedAction: { type: 'STRING', description: 'Immediate recommended action for the fan.' },
         simulatedDataUsed: {
           type: 'ARRAY',
+          minItems: '1',
           items: { type: 'STRING' },
           description: 'Specific lists/pieces of simulated telemetry or venue info that were referenced.'
         },
@@ -173,10 +280,8 @@ Return a structured JSON object matching the requested schema.`;
       const responseText = await generateContentFn(prompt, systemInstruction, responseSchema);
       
       // Parse output
-      let parsed;
-      try {
-        parsed = JSON.parse(responseText);
-      } catch {
+      const parsedResult = parseModelJson(responseText);
+      if (!parsedResult.success) {
         return res.status(500).json({
           error: 'Invalid Output Format',
           message: 'The generative response could not be parsed as valid JSON.'
@@ -184,13 +289,7 @@ Return a structured JSON object matching the requested schema.`;
       }
 
       // Schema validation check
-      if (
-        typeof parsed.summary !== 'string' ||
-        typeof parsed.recommendedAction !== 'string' ||
-        !Array.isArray(parsed.simulatedDataUsed) ||
-        !parsed.simulatedDataUsed.every(item => typeof item === 'string') ||
-        typeof parsed.limitations !== 'string'
-      ) {
+      if (!isValidFanResponse(parsedResult.value)) {
         return res.status(500).json({
           error: 'Schema Validation Error',
           message: 'The model response did not conform to the expected Fan Assistant response structure.'
@@ -198,7 +297,7 @@ Return a structured JSON object matching the requested schema.`;
       }
 
       // Safe JSON output return
-      res.json(parsed);
+      res.json(parsedResult.value);
     } catch {
       // Return controlled 500 without leaking secrets
       res.status(500).json({
@@ -218,22 +317,38 @@ Return a structured JSON object matching the requested schema.`;
       });
     }
 
+    if (!isJsonRecord(req.body)) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Request body must be a JSON object.'
+      });
+    }
+
     const { incident, venue, simulatedVenueContext } = req.body;
 
     // 2. Input Validation
-    const incidentErr = validateText(incident, 1000, 'incident');
-    const venueErr = validateText(venue, 1000, 'venue');
-    const contextErr = validateText(simulatedVenueContext, 4000, 'simulatedVenueContext');
+    const incidentValidation = validateAndSerializeField(incident, 1000, 'incident', 'object');
+    const venueValidation = validateAndSerializeField(venue, 1000, 'venue', 'object');
+    const contextValidation = validateAndSerializeField(
+      simulatedVenueContext,
+      4000,
+      'simulatedVenueContext',
+      'object'
+    );
 
-    if (incidentErr || venueErr || contextErr) {
+    if (incidentValidation.error || venueValidation.error || contextValidation.error) {
       return res.status(400).json({
         error: 'Bad Request',
-        message: incidentErr || venueErr || contextErr
+        message: incidentValidation.error || venueValidation.error || contextValidation.error
       });
     }
 
     // 3. Prompt Injection Safeguard
-    if (detectPromptInjection(incident) || detectPromptInjection(venue) || detectPromptInjection(simulatedVenueContext)) {
+    if (
+      detectPromptInjection(incidentValidation.value) ||
+      detectPromptInjection(venueValidation.value) ||
+      detectPromptInjection(contextValidation.value)
+    ) {
       return res.status(400).json({
         error: 'Safety Rejection',
         message: 'Request rejected due to potential prompt-injection attempt.'
@@ -252,13 +367,13 @@ You must adhere to the following safety rules:
 7. Do not expose or reference internal credentials or backend configurations.`;
 
     const prompt = `[SIMULATED INCIDENT REPORT]
-${typeof incident === 'object' ? JSON.stringify(incident) : incident}
+${incidentValidation.value}
 
 [SIMULATED VENUE DATA]
-${typeof venue === 'object' ? JSON.stringify(venue) : venue}
+${venueValidation.value}
 
 [SIMULATED VENUE CONTEXT]
-${typeof simulatedVenueContext === 'object' ? JSON.stringify(simulatedVenueContext) : simulatedVenueContext}
+${contextValidation.value}
 
 Instructions:
 Analyze the simulated incident and generate staff decision-support draft recommendations based strictly on the provided context.
@@ -271,6 +386,7 @@ Return a structured JSON object matching the requested schema.`;
         priorityLevel: { type: 'STRING', enum: ['Low', 'Medium', 'High'], description: 'Priority level based on incident severity.' },
         recommendedActions: {
           type: 'ARRAY',
+          minItems: '1',
           items: { type: 'STRING' },
           description: 'Action plan steps for operational staff or volunteers.'
         },
@@ -280,6 +396,7 @@ Return a structured JSON object matching the requested schema.`;
         crowdTransitNote: { type: 'STRING', description: 'Transit and crowd egress guidance based on simulated telemetry.' },
         simulatedDataUsed: {
           type: 'ARRAY',
+          minItems: '1',
           items: { type: 'STRING' },
           description: 'Specific lists/pieces of simulated telemetry or venue info that were referenced.'
         },
@@ -303,10 +420,8 @@ Return a structured JSON object matching the requested schema.`;
       const responseText = await generateContentFn(prompt, systemInstruction, responseSchema);
       
       // Parse output
-      let parsed;
-      try {
-        parsed = JSON.parse(responseText);
-      } catch {
+      const parsedResult = parseModelJson(responseText);
+      if (!parsedResult.success) {
         return res.status(500).json({
           error: 'Invalid Output Format',
           message: 'The generative response could not be parsed as valid JSON.'
@@ -314,34 +429,7 @@ Return a structured JSON object matching the requested schema.`;
       }
 
       // Schema validation check
-      const requiredKeys = [
-        'situationSummary',
-        'priorityLevel',
-        'recommendedActions',
-        'volunteerBriefing',
-        'fanAnnouncementDraft',
-        'accessibilityNote',
-        'crowdTransitNote',
-        'simulatedDataUsed',
-        'limitations'
-      ];
-      const priorityLevels = ['Low', 'Medium', 'High'];
-
-      const hasKeys = requiredKeys.every(key => key in parsed);
-      if (
-        !hasKeys ||
-        typeof parsed.situationSummary !== 'string' ||
-        !priorityLevels.includes(parsed.priorityLevel) ||
-        !Array.isArray(parsed.recommendedActions) ||
-        !parsed.recommendedActions.every(item => typeof item === 'string') ||
-        typeof parsed.volunteerBriefing !== 'string' ||
-        typeof parsed.fanAnnouncementDraft !== 'string' ||
-        typeof parsed.accessibilityNote !== 'string' ||
-        typeof parsed.crowdTransitNote !== 'string' ||
-        !Array.isArray(parsed.simulatedDataUsed) ||
-        !parsed.simulatedDataUsed.every(item => typeof item === 'string') ||
-        typeof parsed.limitations !== 'string'
-      ) {
+      if (!isValidIncidentResponse(parsedResult.value)) {
         return res.status(500).json({
           error: 'Schema Validation Error',
           message: 'The model response did not conform to the expected Incident Support response structure.'
@@ -349,7 +437,7 @@ Return a structured JSON object matching the requested schema.`;
       }
 
       // Safe JSON output return
-      res.json(parsed);
+      res.json(parsedResult.value);
     } catch {
       // Return controlled 500 without leaking secrets
       res.status(500).json({
@@ -359,8 +447,13 @@ Return a structured JSON object matching the requested schema.`;
     }
   });
 
+  app.use((_req, res) => res.status(404).json({
+    error: 'Not Found',
+    message: 'The requested API route does not exist.'
+  }));
+
   // Conservative CORS and general error-handling middleware to always return JSON errors
-  app.use((err, req, res, _next) => {
+  app.use((err, _req, res, _next) => {
     if (err.message === 'Not allowed by CORS') {
       return res.status(400).json({
         error: 'CORS Error',
@@ -372,6 +465,12 @@ Return a structured JSON object matching the requested schema.`;
       return res.status(413).json({
         error: 'Payload Too Large',
         message: 'The request payload exceeds the allowed limit of 10kb.'
+      });
+    }
+    if (err.type === 'entity.parse.failed') {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Request body must contain valid JSON.'
       });
     }
     return res.status(500).json({
