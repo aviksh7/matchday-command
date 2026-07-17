@@ -136,6 +136,8 @@ describe('Staff Command Helper Logic Functions', () => {
     expect(joinedActions).toContain('Gate 1');
     expect(joinedActions).toContain('Train Terminal');
     expect(joinedActions).toContain('Wheelchair Assistance');
+    expect(joinedActions).toContain('Simulated decision-support option');
+    expect(joinedActions).not.toMatch(/\bdispatch\b|\bassign\b/i);
 
     // Ensure safe wording: no claims of real-time, live, official, dispatch, ticketing or emergency access
     actions.forEach(action => {

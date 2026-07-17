@@ -92,4 +92,28 @@ describe('Matchday Command Base Application', () => {
 
     expect(await screen.findByLabelText(/Select Venue View/i)).toHaveValue('mexico-demo');
   });
+
+  it('carries a selected map incident into Incident Support and clears it on direct navigation', async () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Crowd Map' }));
+    const mapVenueSelect = await screen.findByLabelText(/Select Venue View/i);
+    fireEvent.change(mapVenueSelect, { target: { value: 'mexico-demo' } });
+    fireEvent.click(screen.getByRole('button', { name: /Incident INC-302/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open Incident Support' }));
+
+    expect(await screen.findByLabelText(/Select Venue View/i)).toHaveValue('mexico-demo');
+    expect(screen.getByRole('button', { name: 'Review incident INC-302' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('heading', { level: 3, name: 'Decision Support Detail: INC-302' })).toBeInTheDocument();
+    expect(screen.getByRole('note', { name: 'Map handoff context' })).toHaveTextContent(
+      'Map context loaded: Mexico City Stadium Demo, incident INC-302.',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Incident Support' }));
+
+    expect(await screen.findByLabelText(/Select Venue View/i)).toHaveValue('toronto-demo');
+    expect(screen.getByRole('button', { name: 'Review incident INC-201' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('heading', { level: 3, name: 'Incident Details & Decision Support' })).toBeInTheDocument();
+    expect(screen.queryByRole('note', { name: 'Map handoff context' })).not.toBeInTheDocument();
+  });
 });

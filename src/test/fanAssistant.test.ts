@@ -107,6 +107,20 @@ describe('Simulated Fan Assistant Response Logic', () => {
     expect(wheelchairResponse.answer).toContain('Gate 2'); // Gate 2 is accessibleReady
   });
 
+  it('prioritizes accessibility intent when a custom query also mentions a gate or entrance', () => {
+    ['Which accessible gate is open?', 'Where is the wheelchair entrance?', 'Is there an accessibility entrance?'].forEach(query => {
+      const response = getSimulatedAssistantResponse('custom', query, mockTestVenue);
+
+      expect(response.answer).toContain('open gates are equipped with accessible lanes');
+      expect(response.telemetryUsed).toContain('Simulated accessibility gates');
+      expect(response.answer).not.toContain('lowest intake pressure');
+    });
+
+    const genericSignQuery = getSimulatedAssistantResponse('custom', 'Where are the signs at the gate?', mockTestVenue);
+    expect(genericSignQuery.answer).toContain('lowest intake pressure');
+    expect(genericSignQuery.telemetryUsed).toContain('Simulated gates telemetry');
+  });
+
   it('describes pending accessibility support without claiming dispatch', () => {
     const venueWithPendingSupport: VenueData = {
       ...mockTestVenue,
@@ -117,7 +131,19 @@ describe('Simulated Fan Assistant Response Logic', () => {
     const response = getSimulatedAssistantResponse('accessible-guidance', null, venueWithPendingSupport);
 
     expect(response.answer).toContain('1 pending accessibility support request');
+    expect(response.answer).toContain('Gate 2 (Pending)');
+    expect(response.telemetryUsed).toContain('Wheelchair Assistance at Gate 2 (Pending)');
+    expect(`${response.answer} ${response.action}`).not.toMatch(/guest services|information booth/i);
     expect(response.answer).not.toMatch(/dispatch/i);
+  });
+
+  it('does not invent accessibility support locations when none exist in the venue snapshot', () => {
+    const response = getSimulatedAssistantResponse('accessible-guidance', null, mockTestVenue);
+    const responseText = `${response.answer} ${response.action} ${response.telemetryUsed}`;
+
+    expect(response.answer).toContain('No active accessibility support request locations are recorded');
+    expect(response.telemetryUsed).toContain('Simulated accessibility requests: None');
+    expect(responseText).not.toMatch(/guest services|information booth/i);
   });
 
   it('uses the shared simulated announcement and clearly limits deterministic translation', () => {

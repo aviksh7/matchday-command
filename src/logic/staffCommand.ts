@@ -112,7 +112,7 @@ export const getRecommendedStaffActions = (venue: VenueData): string[] => {
   const highIncidents = activeIncidents.filter(inc => inc.severity === 'High');
   if (highIncidents.length > 0) {
     highIncidents.forEach(inc => {
-      actions.push(`Simulated operational recommendation: Dispatch nearest volunteer squad to active incident ${inc.id} (${inc.type}) at simulated ${inc.location}.`);
+      actions.push(`Simulated decision-support option: Review an onsite response for active incident ${inc.id} (${inc.type}) at simulated ${inc.location}.`);
     });
   }
 
@@ -120,7 +120,7 @@ export const getRecommendedStaffActions = (venue: VenueData): string[] => {
   const undercovered = getUndercoveredZones(venue);
   if (undercovered.length > 0) {
     undercovered.forEach(zone => {
-      actions.push(`Simulated operational recommendation: Reassign field staff to undercovered zone: ${zone.name} (Simulated occupancy is ${zone.occupancyPercentage}% with only ${zone.volunteerCount} volunteers).`);
+      actions.push(`Simulated decision-support option: Review field-staff coverage for ${zone.name} (simulated occupancy is ${zone.occupancyPercentage}% with ${zone.volunteerCount} volunteers).`);
     });
   }
 
@@ -131,7 +131,7 @@ export const getRecommendedStaffActions = (venue: VenueData): string[] => {
 
     if (highPressureGates.length > 0 && leastCrowded && leastCrowded.percentage < PRESSURE_THRESHOLDS.ELEVATED) {
       highPressureGates.forEach(gate => {
-        actions.push(`Simulated operational recommendation: Monitor bottleneck at ${gate.name} (${gate.percentage}% simulated pressure). Instruct static volunteers to guide inbound flow toward ${leastCrowded.name} (${leastCrowded.percentage}% simulated pressure).`);
+        actions.push(`Simulated decision-support option: Review the bottleneck at ${gate.name} (${gate.percentage}% simulated pressure) and whether onsite volunteers should guide inbound flow toward ${leastCrowded.name} (${leastCrowded.percentage}% simulated pressure).`);
       });
     }
   }
@@ -141,7 +141,7 @@ export const getRecommendedStaffActions = (venue: VenueData): string[] => {
     const highTransit = venue.transitStatus.filter(t => t.loadLevel === 'Critical' || t.loadLevel === 'High');
     if (highTransit.length > 0) {
       highTransit.forEach(t => {
-        actions.push(`Simulated operational recommendation: Prepare egress path safety barriers for simulated ${t.type} showing ${t.crowdPressurePercentage}% simulated load (${t.loadLevel}).`);
+        actions.push(`Simulated decision-support option: Review egress-path readiness for simulated ${t.type}, which shows ${t.crowdPressurePercentage}% simulated load (${t.loadLevel}).`);
       });
     }
   }
@@ -151,14 +151,14 @@ export const getRecommendedStaffActions = (venue: VenueData): string[] => {
     const pendingRequests = venue.accessibilityRequests.filter(r => r.status === 'Pending');
     if (pendingRequests.length > 0) {
       pendingRequests.forEach(req => {
-        actions.push(`Simulated operational recommendation: Coordinate accessibility support: Assign volunteer escort for pending ${req.type} request at simulated ${req.location}.`);
+        actions.push(`Simulated decision-support option: Review the pending ${req.type} request at simulated ${req.location} and confirm an appropriate support plan with qualified onsite staff.`);
       });
     }
   }
 
   // If list is empty, return a default simulated check recommendation
   if (actions.length === 0) {
-    actions.push("Simulated operational recommendation: All metrics are within baseline parameters. Proceed with standard prototype volunteer patrol routes.");
+    actions.push('Simulated decision-support option: All metrics are within baseline parameters. Keep the standard prototype patrol plan under qualified human review.');
   }
 
   return actions;

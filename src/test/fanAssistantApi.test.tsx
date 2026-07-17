@@ -23,6 +23,15 @@ describe('Fan Assistant API Integration & Fallback Flow', () => {
     expect(screen.getByRole('group', { name: 'Quick guidance prompt shortcuts' })).toBeInTheDocument();
   });
 
+  it('describes cloud and local fallback capability without claiming cloud AI is always enabled', () => {
+    render(<FanAssistant />);
+
+    expect(screen.getByText('Cloud AI + local fallback')).toHaveAccessibleName(
+      'Hybrid guidance: cloud AI when available, with deterministic local fallback'
+    );
+    expect(screen.queryByText('AI GUIDANCE ENABLED')).not.toBeInTheDocument();
+  });
+
   it('uses non-animated transcript scrolling when reduced motion is requested', () => {
     const scrollSpy = vi.spyOn(window.HTMLElement.prototype, 'scrollIntoView');
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));

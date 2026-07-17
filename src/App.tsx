@@ -14,10 +14,17 @@ const ProjectDetails = lazy(() => loadPageModule(import('./pages/ProjectDetails'
 export const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<PageId>('home');
   const [crowdMapInitialVenueId, setCrowdMapInitialVenueId] = useState<string | undefined>();
+  const [incidentSupportContext, setIncidentSupportContext] = useState<{
+    venueId: string;
+    incidentId: string;
+  } | null>(null);
 
   const navigate = (page: PageId) => {
     if (page === 'crowd-map') {
       setCrowdMapInitialVenueId(undefined);
+    }
+    if (page === 'incident-support') {
+      setIncidentSupportContext(null);
     }
     setCurrentPage(page);
   };
@@ -25,6 +32,11 @@ export const App: React.FC = () => {
   const openCrowdMapForVenue = (venueId?: string) => {
     setCrowdMapInitialVenueId(venueId);
     setCurrentPage('crowd-map');
+  };
+
+  const openIncidentSupportForMapIncident = (venueId: string, incidentId: string) => {
+    setIncidentSupportContext({ venueId, incidentId });
+    setCurrentPage('incident-support');
   };
 
   const renderPage = () => {
@@ -39,11 +51,19 @@ export const App: React.FC = () => {
         return (
           <CrowdMap
             initialVenueId={crowdMapInitialVenueId}
-            onOpenIncidentSupport={() => setCurrentPage('incident-support')}
+            onOpenIncidentSupport={openIncidentSupportForMapIncident}
           />
         );
       case 'incident-support':
-        return <IncidentSupport />;
+        return (
+          <IncidentSupport
+            key={incidentSupportContext
+              ? `${incidentSupportContext.venueId}:${incidentSupportContext.incidentId}`
+              : 'direct'}
+            initialVenueId={incidentSupportContext?.venueId}
+            initialIncidentId={incidentSupportContext?.incidentId}
+          />
+        );
       case 'project-details':
         return <ProjectDetails />;
       default:

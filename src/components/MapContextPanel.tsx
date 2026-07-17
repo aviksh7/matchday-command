@@ -18,7 +18,7 @@ interface MapContextPanelProps {
   venue: VenueData;
   selection: MapSelection | null;
   onClear: () => void;
-  onOpenIncidentSupport: () => void;
+  onOpenIncidentSupport: (venueId: string, incidentId: string) => void;
 }
 
 const getSelectionAnnouncement = (venue: VenueData, selection: MapSelection | null) => {
@@ -173,8 +173,17 @@ export const MapContextPanel: React.FC<MapContextPanelProps> = ({
           <span>{incident.timestamp}</span>
           <span>{incident.id}</span>
         </div>
-        <p className="map-context__notice">This marker only opens incident details on the map. Incident Support will open without preselecting this incident.</p>
-        <Button variant="paper" icon="incident" trailingIcon="arrow-right" onClick={onOpenIncidentSupport}>Open Incident Support</Button>
+        <p className="map-context__notice">
+          Incident Support will preselect this simulated venue and incident. This transfers local prototype context only; no operational system is contacted.
+        </p>
+        <Button
+          variant="paper"
+          icon="incident"
+          trailingIcon="arrow-right"
+          onClick={() => onOpenIncidentSupport(venue.id, incident.id)}
+        >
+          Open Incident Support
+        </Button>
       </>
     );
   };

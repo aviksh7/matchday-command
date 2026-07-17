@@ -9,7 +9,7 @@ import '../styles/crowd-map.css';
 
 interface CrowdMapProps {
   initialVenueId?: string;
-  onOpenIncidentSupport?: () => void;
+  onOpenIncidentSupport?: (venueId: string, incidentId: string) => void;
 }
 
 const getValidVenueId = (venueId?: string) => (

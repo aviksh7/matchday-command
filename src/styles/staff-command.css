@@ -436,6 +436,105 @@
   text-align: right;
 }
 
+.staff-command__review-boundary,
+.staff-command__request-boundary {
+  padding: 0.75rem 0.85rem;
+  margin: var(--space-3) 0 var(--space-4);
+  color: var(--paper-muted);
+  background: #eef5f7;
+  border: 1px solid rgb(45 106 119 / 28%);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.staff-command__request-boundary {
+  margin-bottom: 0;
+}
+
+.staff-command__request-count {
+  padding: 0.3rem 0.55rem;
+  color: var(--cyan-paper);
+  background: #e4eef2;
+  border-radius: var(--radius-pill);
+  font-size: 0.68rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.staff-command__request-list {
+  display: grid;
+  padding: 0;
+  margin: var(--space-4) 0 0;
+  gap: var(--space-3);
+  list-style: none;
+}
+
+.staff-command__request-item {
+  padding: var(--space-3);
+  background: var(--paper-100);
+  border: var(--border-paper);
+  border-radius: var(--radius-md);
+}
+
+.staff-command__request-heading {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.staff-command__request-heading strong {
+  font-size: 0.82rem;
+}
+
+.staff-command__request-status {
+  padding: 0.25rem 0.45rem;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.staff-command__request-status--pending {
+  color: var(--amber-paper);
+  background: #fff1c9;
+}
+
+.staff-command__request-status--in-progress {
+  color: var(--cyan-paper);
+  background: #dcecf2;
+}
+
+.staff-command__request-status--resolved {
+  color: var(--green-paper);
+  background: #e5f2e8;
+}
+
+.staff-command__request-details {
+  display: grid;
+  margin: var(--space-3) 0 0;
+  gap: var(--space-2);
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.staff-command__request-details div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.staff-command__request-details dt {
+  color: var(--paper-muted);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+}
+
+.staff-command__request-details dd {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
 .staff-command__incident-detail {
   background: var(--paper-50);
 }
@@ -537,7 +636,8 @@
   }
 
   .staff-command__overview-list,
-  .staff-command__incident-details {
+  .staff-command__incident-details,
+  .staff-command__request-details {
     grid-template-columns: minmax(0, 1fr);
   }
 

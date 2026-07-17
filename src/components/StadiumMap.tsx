@@ -37,7 +37,10 @@ const transitIconLabel = (type: string) => {
 };
 
 export const StadiumMap: React.FC<StadiumMapProps> = ({ venue, selection, onSelect }) => {
-  const accessibleGateIndex = venue.gates.findIndex(gate => gate.isOpen && gate.accessibleReady);
+  const accessibleGateIndexes = venue.gates
+    .map((gate, index) => ({ gate, index }))
+    .filter(({ gate }) => gate.isOpen && gate.accessibleReady)
+    .map(({ index }) => index);
 
   const selectWithKeyboard = (event: KeyboardEvent<SVGGElement>, feature: MapSelection) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -91,12 +94,17 @@ export const StadiumMap: React.FC<StadiumMapProps> = ({ venue, selection, onSele
               );
             })}
 
-            {accessibleGateIndex >= 0 && (
-              <>
-                <path className="map-accessibility-route map-accessibility-route--underlay" d={ACCESSIBILITY_ROUTES[accessibleGateIndex] ?? ACCESSIBILITY_ROUTES[0]} />
-                <path className="map-accessibility-route" d={ACCESSIBILITY_ROUTES[accessibleGateIndex] ?? ACCESSIBILITY_ROUTES[0]} />
-              </>
-            )}
+            {accessibleGateIndexes.map((gateIndex) => {
+              const routePath = ACCESSIBILITY_ROUTES[gateIndex];
+              if (!routePath) return null;
+
+              return (
+                <React.Fragment key={`accessible-route-${venue.gates[gateIndex].id}`}>
+                  <path className="map-accessibility-route map-accessibility-route--underlay" d={routePath} />
+                  <path className="map-accessibility-route" d={routePath} />
+                </React.Fragment>
+              );
+            })}
           </g>
 
           <g className={`map-districts ${selection ? 'map-districts--has-selection' : ''}`}>

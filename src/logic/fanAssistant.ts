@@ -25,12 +25,22 @@ export const getSimulatedAssistantResponse = (
   let activeKey: AssistantPromptKey | 'custom' = promptKey;
   if (activeKey === 'custom' && customQuery) {
     const queryLower = customQuery.toLowerCase();
-    if (queryLower.includes('gate') || queryLower.includes('entrance') || queryLower.includes('enter')) {
+    const hasAccessibilityIntent = [
+      'accessible',
+      'accessibility',
+      'wheelchair',
+      'mobility',
+      'sensory',
+      'sign language',
+      'interpreter',
+    ].some(keyword => queryLower.includes(keyword));
+
+    if (hasAccessibilityIntent) {
+      activeKey = 'accessible-guidance';
+    } else if (queryLower.includes('gate') || queryLower.includes('entrance') || queryLower.includes('enter')) {
       activeKey = 'least-crowded-gate';
     } else if (queryLower.includes('restroom') || queryLower.includes('toilet') || queryLower.includes('wait') || queryLower.includes('concession') || queryLower.includes('food') || queryLower.includes('merch')) {
       activeKey = 'low-wait-concessions';
-    } else if (queryLower.includes('accessible') || queryLower.includes('wheelchair') || queryLower.includes('sensory') || queryLower.includes('sign')) {
-      activeKey = 'accessible-guidance';
     } else if (queryLower.includes('transit') || queryLower.includes('train') || queryLower.includes('bus') || queryLower.includes('rideshare')) {
       activeKey = 'transit-pressures';
     } else if (queryLower.includes('sustainability') || queryLower.includes('eco') || queryLower.includes('recycling') || queryLower.includes('refill')) {
@@ -96,14 +106,24 @@ export const getSimulatedAssistantResponse = (
 
     case 'accessible-guidance': {
       const accessibleGates = venue.gates.filter(g => g.isOpen && g.accessibleReady).map(g => g.name);
-      const pendingReqsCount = venue.accessibilityRequests.filter(r => r.status === 'Pending').length;
+      const activeSupportRequests = venue.accessibilityRequests.filter(request => request.status !== 'Resolved');
+      const pendingReqsCount = activeSupportRequests.filter(request => request.status === 'Pending').length;
 
       let answer = `Simulated accessibility status shows that the following open gates are equipped with accessible lanes: ${accessibleGates.join(', ') || 'None'}.`;
-      let action = `Approach one of these gates for wheelchair-ready security screening.`;
+      let action = accessibleGates.length > 0
+        ? `Use one of these simulated accessibility-ready gates for wheelchair-ready security screening.`
+        : `No open accessibility-ready gate is shown in this snapshot. Confirm an accessible entrance using posted venue signs or qualified onsite staff.`;
 
-      const activeBooths = venue.id === 'mexico-demo' ? 'Information Booth 2' : venue.id === 'nynj-demo' ? 'Gate C Guest Services' : 'North Guest Services';
-      answer += ` Assistance points are active at the ${activeBooths}.`;
-      action += ` For mobility support inside the stadium, locate the ${activeBooths}.`;
+      if (activeSupportRequests.length > 0) {
+        const requestLocations = activeSupportRequests
+          .map(request => `${request.location} (${request.status})`)
+          .join('; ');
+        answer += ` Active simulated accessibility support request locations: ${requestLocations}.`;
+        action += ` Treat recorded request locations as prototype context and confirm assistance with qualified onsite staff.`;
+      } else {
+        answer += ` No active accessibility support request locations are recorded in this snapshot.`;
+        action += ` Follow posted accessibility signs or ask qualified onsite staff for current support locations.`;
+      }
 
       if (pendingReqsCount > 0) {
         const supportRequestLabel = pendingReqsCount === 1 ? 'request' : 'requests';
@@ -113,7 +133,7 @@ export const getSimulatedAssistantResponse = (
       return {
         answer,
         action,
-        telemetryUsed: `Simulated accessibility gates: ${venue.gates.map(g => `${g.name} (${g.accessibleReady ? 'Ready' : 'Standard'})`).join(', ')}. Active support tickets: ${venue.accessibilityRequests.length}.`,
+        telemetryUsed: `Simulated accessibility gates: ${venue.gates.map(g => `${g.name} (${g.accessibleReady ? 'Ready' : 'Standard'})`).join(', ')}. Simulated accessibility requests: ${venue.accessibilityRequests.map(request => `${request.type} at ${request.location} (${request.status})`).join(', ') || 'None'}.`,
         disclaimer: `Simulated accessibility guidance helper. Does not guarantee real-world stadium ADA route accuracy.`
       };
     }

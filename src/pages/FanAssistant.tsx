@@ -223,7 +223,12 @@ export const FanAssistant: React.FC = () => {
             ))}
           </select>
         </div>
-        <span className="fan-console-toolbar__capability"><span aria-hidden="true" />AI GUIDANCE ENABLED</span>
+        <span
+          className="fan-console-toolbar__capability"
+          aria-label="Hybrid guidance: cloud AI when available, with deterministic local fallback"
+        >
+          <span aria-hidden="true" />Cloud AI + local fallback
+        </span>
       </section>
 
       <section className="fan-workspace" aria-label="Fan Operations Assistant workspace">

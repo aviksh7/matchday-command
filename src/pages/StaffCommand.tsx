@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import StaffAccessibilityRequests from '../components/StaffAccessibilityRequests';
 import StaffIncidentQueue from '../components/StaffIncidentQueue';
 import StaffIncidentStatusControl from '../components/StaffIncidentStatusControl';
 import StaffPriorityPanel from '../components/StaffPriorityPanel';
@@ -86,6 +87,10 @@ export const StaffCommand: React.FC = () => {
 
         <div className="staff-command__column">
           <StaffPriorityPanel recommendedActions={recommendedActions} priorityQueue={priorityQueue} />
+          <StaffAccessibilityRequests
+            venueName={venueSnapshot.name}
+            requests={venueSnapshot.accessibilityRequests}
+          />
           <StaffIncidentQueue
             venueName={venueSnapshot.name}
             incidents={localIncidents}

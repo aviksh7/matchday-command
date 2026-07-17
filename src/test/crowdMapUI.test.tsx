@@ -90,15 +90,17 @@ describe('Crowd Map UI Dashboard Component', () => {
     );
   });
 
-  it('opens incident details and accurately navigates to Incident Support without promising preselection', () => {
+  it('hands the selected simulated venue and incident to Incident Support', () => {
     const onOpenIncidentSupport = vi.fn();
     render(<CrowdMap onOpenIncidentSupport={onOpenIncidentSupport} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Incident INC-201/i }));
     expect(screen.getByRole('heading', { level: 3, name: 'Spill Hazard' })).toBeInTheDocument();
-    expect(screen.getByText(/will open without preselecting this incident/i)).toBeInTheDocument();
+    expect(screen.getByText(/will preselect this simulated venue and incident/i)).toBeInTheDocument();
+    expect(screen.getByText(/no operational system is contacted/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Open Incident Support' }));
-    expect(onOpenIncidentSupport).toHaveBeenCalledTimes(1);
+    expect(onOpenIncidentSupport).toHaveBeenCalledOnce();
+    expect(onOpenIncidentSupport).toHaveBeenCalledWith('toronto-demo', 'INC-201');
   });
 });

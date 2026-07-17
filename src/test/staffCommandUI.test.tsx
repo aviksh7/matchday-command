@@ -38,6 +38,25 @@ describe('Staff Command Center UI Dashboard Component', () => {
     expect(screen.getByText('Green Transit Encouragement Indicator')).toBeInTheDocument();
   });
 
+  it('surfaces accessibility request details with local review and no-dispatch boundaries', () => {
+    render(<StaffCommand />);
+
+    const panel = screen.getByRole('region', { name: 'Simulated Accessibility Support Requests' });
+    expect(within(panel).getByText('Wheelchair Assistance')).toBeInTheDocument();
+    expect(within(panel).getByText('Gate A Security')).toBeInTheDocument();
+    expect(within(panel).getByText('19:10')).toBeInTheDocument();
+    expect(within(panel).getByText('Pending')).toBeInTheDocument();
+    expect(within(panel).getByText('Sensory Room Request')).toBeInTheDocument();
+    expect(within(panel).getByText('In Progress')).toBeInTheDocument();
+    expect(within(panel).getByRole('note', { name: 'Accessibility request boundary' })).toHaveTextContent(
+      'do not confirm assistance, contact staff, or trigger dispatch',
+    );
+
+    const reviewNote = screen.getByRole('note', { name: 'Recommendation review boundary' });
+    expect(reviewNote).toHaveTextContent('qualified human');
+    expect(reviewNote).toHaveTextContent('Nothing listed here dispatches staff');
+  });
+
   it('updates simulated queue waits and pressure bands when the venue changes', () => {
     render(<StaffCommand />);
 
@@ -50,6 +69,9 @@ describe('Staff Command Center UI Dashboard Component', () => {
     expect(within(table).getByRole('row', { name: /Restroom Block Sec 134 Restroom 15 min Elevated pressure/i })).toBeInTheDocument();
     expect(within(table).getByRole('row', { name: /Souvenirs Plaza Merchandise 30 min High pressure/i })).toBeInTheDocument();
     expect(screen.queryByText('Maple Grills Sec 102')).not.toBeInTheDocument();
+    expect(screen.getByText('Sign Language')).toBeInTheDocument();
+    expect(screen.getByText('Information Booth 2')).toBeInTheDocument();
+    expect(screen.queryByText('Wheelchair Assistance')).not.toBeInTheDocument();
   });
 
   it('synchronizes incidents and clears the selection when the venue changes', async () => {

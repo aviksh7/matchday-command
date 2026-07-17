@@ -1,12 +1,40 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import IncidentSupport from '../pages/IncidentSupport';
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('Incident Support UI Dashboard Component', () => {
   it('renders the Incident Support header and selector', () => {
     render(<IncidentSupport />);
     expect(screen.getByRole('heading', { level: 2, name: /Incident Decision Support Center/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Select Venue View/i)).toBeInTheDocument();
+  });
+
+  it('preselects a valid local map handoff without starting an external request', () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    render(<IncidentSupport initialVenueId="mexico-demo" initialIncidentId="INC-302" />);
+
+    expect(screen.getByLabelText(/Select Venue View/i)).toHaveValue('mexico-demo');
+    expect(screen.getByRole('button', { name: 'Review incident INC-302' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('heading', { level: 3, name: 'Decision Support Detail: INC-302' })).toBeInTheDocument();
+    expect(screen.getByRole('note', { name: 'Map handoff context' })).toHaveTextContent(
+      'Map context loaded: Mexico City Stadium Demo, incident INC-302.',
+    );
+    expect(screen.getByText('Local deterministic fallback', { selector: '.incident-source' })).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('does not preselect an incident when the incoming venue context is invalid', () => {
+    render(<IncidentSupport initialVenueId="invalid-venue" initialIncidentId="INC-201" />);
+
+    expect(screen.getByLabelText(/Select Venue View/i)).toHaveValue('toronto-demo');
+    expect(screen.getByRole('button', { name: 'Review incident INC-201' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('heading', { level: 3, name: 'Incident Details & Decision Support' })).toBeInTheDocument();
+    expect(screen.queryByRole('note', { name: 'Map handoff context' })).not.toBeInTheDocument();
   });
 
   it('renders the simulated disclaimer clearly', () => {

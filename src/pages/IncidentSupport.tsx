@@ -27,6 +27,21 @@ const LOCAL_INCIDENT_LIMITATIONS = [
 
 const CUSTOM_SCENARIO_ID = 'SCEN-MOCK';
 
+interface IncidentSupportProps {
+  initialVenueId?: string;
+  initialIncidentId?: string;
+}
+
+const resolveInitialSelection = (venueId?: string, incidentId?: string) => {
+  const requestedVenue = SIMULATED_VENUES.find(item => item.id === venueId);
+  const venue = requestedVenue ?? SIMULATED_VENUES[0];
+  const incident = requestedVenue && incidentId
+    ? requestedVenue.incidents.find(item => item.id === incidentId)
+    : undefined;
+
+  return { venue, incident };
+};
+
 const normalizeLocalSummary = (summary: ReturnType<typeof getIncidentSupportSummary>): IncidentSupportApiResponse => ({
   situationSummary: summary.situationSummary,
   priorityLevel: summary.priorityLevel,
@@ -39,10 +54,15 @@ const normalizeLocalSummary = (summary: ReturnType<typeof getIncidentSupportSumm
   limitations: LOCAL_INCIDENT_LIMITATIONS
 });
 
-export const IncidentSupport: React.FC = () => {
-  const [selectedVenueId, setSelectedVenueId] = useState<string>(SIMULATED_VENUES[0].id);
-  const [localIncidents, setLocalIncidents] = useState<IncidentData[]>([]);
-  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
+export const IncidentSupport: React.FC<IncidentSupportProps> = ({
+  initialVenueId,
+  initialIncidentId,
+}) => {
+  const initialSelectionRef = useRef(resolveInitialSelection(initialVenueId, initialIncidentId));
+  const initialSelection = initialSelectionRef.current;
+  const [selectedVenueId, setSelectedVenueId] = useState<string>(initialSelection.venue.id);
+  const [localIncidents, setLocalIncidents] = useState<IncidentData[]>(initialSelection.venue.incidents);
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(initialSelection.incident?.id ?? null);
   
   // Local Scenario Builder States
   const [customType, setCustomType] = useState<string>('Spill Hazard');
@@ -56,8 +76,14 @@ export const IncidentSupport: React.FC = () => {
   const activeRequestRef = useRef<AbortController | null>(null);
   const currentIncidentIdRef = useRef<string | null>(null);
   const currentVenueIdRef = useRef<string>(selectedVenueId);
+  const previousVenueIdRef = useRef<string>(selectedVenueId);
 
   const selectedVenue = SIMULATED_VENUES.find(v => v.id === selectedVenueId) || SIMULATED_VENUES[0];
+  const hasActiveMapContext = Boolean(
+    initialSelection.incident
+    && selectedVenueId === initialSelection.venue.id
+    && selectedIncidentId === initialSelection.incident.id
+  );
 
   // Reset incidents list and cancel active requests when venue changes
   useEffect(() => {
@@ -70,8 +96,13 @@ export const IncidentSupport: React.FC = () => {
     currentIncidentIdRef.current = null;
     currentVenueIdRef.current = selectedVenueId;
 
+    const venueChanged = previousVenueIdRef.current !== selectedVenueId;
+    previousVenueIdRef.current = selectedVenueId;
+
     setLocalIncidents(selectedVenue.incidents);
-    setSelectedIncidentId(null);
+    if (venueChanged) {
+      setSelectedIncidentId(null);
+    }
     setCustomScenario(null);
   }, [selectedVenueId, selectedVenue]);
 
@@ -220,6 +251,11 @@ export const IncidentSupport: React.FC = () => {
           <p>
             Prototype operations panel to review mock safety tickets, access hybrid AI checklists via Vertex AI Cloud Run or local fallback, and build custom test scenarios.
           </p>
+          {hasActiveMapContext && initialSelection.incident && (
+            <p role="note" aria-label="Map handoff context">
+              <strong>Map context loaded:</strong> {initialSelection.venue.name}, incident {initialSelection.incident.id}. This is a local simulated handoff; review the selected record before using its decision-support draft.
+            </p>
+          )}
         </div>
 
         <div className="incident-venue-control">
