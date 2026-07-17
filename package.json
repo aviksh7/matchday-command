@@ -14,6 +14,10 @@
     "test": "vitest run",
     "test:server": "npm --prefix server test",
     "test:all": "npm run test && npm run test:server",
+    "coverage:frontend": "vitest run --coverage",
+    "coverage:server": "vitest run --root server --coverage",
+    "coverage": "npm run coverage:frontend && npm run coverage:server",
+    "check:coverage": "npm run coverage",
     "check": "npm run lint && npm run build && npm run test:all"
   },
   "dependencies": {
@@ -27,6 +31,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
+    "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^26.0.0",
     "oxlint": "^1.71.0",
     "typescript": "~6.0.2",
