@@ -50,7 +50,7 @@ export const StaffCommand: React.FC = () => {
 
   return (
     <div className="page-container staff-command">
-      <div className="disclaimer-banner staff-command__disclaimer" role="alert">
+      <div className="disclaimer-banner staff-command__disclaimer" role="note" aria-label="Simulated staff dashboard notice">
         <strong>Important Simulated Notice:</strong> This dashboard uses simulated prototype data and does not access external FIFA, venue, transit, ticketing, emergency, or current crowd systems. All status panels, gate loads, and recommendations are simulated mockups.
       </div>
 

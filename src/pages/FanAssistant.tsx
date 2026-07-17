@@ -93,7 +93,9 @@ export const FanAssistant: React.FC = () => {
 
   // Scroll chat to bottom on new messages
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const prefersReducedMotion = typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    chatEndRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' });
   }, [chatHistory, isLoading]);
 
   const getCurrentTimestamp = () => {
@@ -194,6 +196,13 @@ export const FanAssistant: React.FC = () => {
     executeFanQuery(queryText, 'custom');
   };
 
+  const latestMessage = chatHistory[chatHistory.length - 1];
+  const guidanceAnnouncement = isLoading
+    ? 'Generating fan guidance via Vertex AI.'
+    : latestMessage?.sender === 'assistant' && latestMessage.responseData
+      ? `Fan guidance ready. Source: ${latestMessage.source || 'Local deterministic fallback'}. Limitations: ${latestMessage.responseData.disclaimer}`
+      : '';
+
   return (
     <div className="page-container fan-assistant-page">
       <section className="fan-console-toolbar" aria-label="Fan Assistant console controls">
@@ -227,7 +236,12 @@ export const FanAssistant: React.FC = () => {
             <div className="fan-chat__venue">Console <strong>{selectedVenue.name}</strong></div>
           </header>
 
-          <div className="fan-chat__messages">
+          <div
+            className="fan-chat__messages"
+            role="region"
+            aria-label="Assistant conversation"
+            aria-busy={isLoading}
+          >
             {chatHistory.map(msg => (
               <article key={msg.id} className={`fan-message fan-message--${msg.sender}`}>
                 {msg.sender === 'user' ? (
@@ -273,12 +287,15 @@ export const FanAssistant: React.FC = () => {
               </article>
             ))}
             {isLoading && (
-              <div className="fan-chat__loading" role="status" aria-live="polite">
+              <div className="fan-chat__loading">
                 <Icon name="spark" size={14} />Generating guidance via Vertex AI...
               </div>
             )}
             <div ref={chatEndRef} />
           </div>
+          <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {guidanceAnnouncement}
+          </p>
         </div>
 
         <aside className="fan-quick-commands" aria-labelledby="fan-quick-commands-title">
@@ -286,7 +303,11 @@ export const FanAssistant: React.FC = () => {
             <span>Command rail</span>
             <h3 id="fan-quick-commands-title">Quick Guidance Prompts</h3>
           </div>
-          <div className="fan-quick-commands__list">
+          <div
+            className="fan-quick-commands__list"
+            role="group"
+            aria-label="Quick guidance prompt shortcuts"
+          >
             {QUICK_COMMANDS.map((command, index) => (
               <button
                 className="fan-quick-command"
@@ -307,8 +328,10 @@ export const FanAssistant: React.FC = () => {
           </p>
         </aside>
 
-        <form className="fan-composer" onSubmit={handleCustomSubmit}>
+        <form className="fan-composer" onSubmit={handleCustomSubmit} aria-busy={isLoading}>
+          <label className="sr-only" htmlFor="fan-assistant-prompt">Ask the Fan Operations Assistant</label>
           <input
+            id="fan-assistant-prompt"
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}

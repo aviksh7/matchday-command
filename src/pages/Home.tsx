@@ -111,6 +111,7 @@ export const Home: React.FC<HomeProps> = ({ setCurrentPage, openCrowdMap }) => {
             eyebrow="Two operating perspectives"
             title="One venue snapshot, built for the people moving through it."
             description="Use the Paper surface for calm, readable fan guidance. Switch to Night when operational pressure and incident context need priority."
+            headingId="mode-split-title"
           />
         </div>
         <article className="mode-panel mode-panel--fan">

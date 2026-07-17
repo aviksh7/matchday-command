@@ -17,18 +17,28 @@ export const ProjectDetails: React.FC = () => {
             Matchday Command explores how grounded AI guidance and deterministic local logic can help fans
             and operations teams interpret the same high-pressure matchday scenario.
           </p>
-          <div className="project-details-links" aria-label="Project links">
-            <a href={LIVE_APPLICATION_URL} target="_blank" rel="noreferrer">
+          <nav className="project-details-links" aria-label="Project links">
+            <a
+              href={LIVE_APPLICATION_URL}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Open the live Matchday Command application (opens in a new tab)"
+            >
               <Icon name="venue" size={17} />
               <span>Open the live Matchday Command application</span>
               <Icon name="arrow-right" size={16} />
             </a>
-            <a href={REPOSITORY_URL} target="_blank" rel="noreferrer">
+            <a
+              href={REPOSITORY_URL}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="View the public Matchday Command repository (opens in a new tab)"
+            >
               <Icon name="info" size={17} />
               <span>View the public Matchday Command repository</span>
               <Icon name="arrow-right" size={16} />
             </a>
-          </div>
+          </nav>
         </div>
         <aside className="project-details-hero__notice" aria-label="Prototype limitation">
           <span>Independent prototype</span>

@@ -35,8 +35,8 @@ describe('Project Details product explanation', () => {
   it('uses descriptive external project links without evaluator score language', () => {
     render(<ProjectDetails />);
 
-    const liveLink = screen.getByRole('link', { name: /Open the live Matchday Command application/i });
-    const repositoryLink = screen.getByRole('link', { name: /View the public Matchday Command repository/i });
+    const liveLink = screen.getByRole('link', { name: /Open the live Matchday Command application \(opens in a new tab\)/i });
+    const repositoryLink = screen.getByRole('link', { name: /View the public Matchday Command repository \(opens in a new tab\)/i });
 
     expect(liveLink).toHaveAttribute('href', 'https://matchday-command-2026.web.app');
     expect(repositoryLink).toHaveAttribute('href', 'https://github.com/aviksh7/matchday-command');

@@ -83,6 +83,12 @@ a {
   outline-offset: 3px;
 }
 
+.app-main--paper:focus-visible,
+:where(.app-main--paper, .card, .venue-ticket, .mode-panel--fan, .map-context)
+  :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline-color: var(--cyan-paper);
+}
+
 .app-container {
   display: flex;
   flex-direction: column;

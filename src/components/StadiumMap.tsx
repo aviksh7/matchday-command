@@ -48,8 +48,15 @@ export const StadiumMap: React.FC<StadiumMapProps> = ({ venue, selection, onSele
 
   return (
     <figure className="stadium-map">
+      <p className="sr-only" id="map-scroll-instructions">
+        On narrow screens, focus this region and use arrow keys to pan the map.
+      </p>
       <div
         className="stadium-map__canvas"
+        role="region"
+        aria-label="Scrollable simulated stadium map"
+        aria-describedby="map-scroll-instructions"
+        tabIndex={0}
         onKeyDown={(event) => {
           if (event.key === 'Escape' && selection) {
             event.preventDefault();
@@ -59,8 +66,9 @@ export const StadiumMap: React.FC<StadiumMapProps> = ({ venue, selection, onSele
       >
         <svg
           viewBox={STADIUM_VIEWBOX}
-          role="img"
-          aria-labelledby="map-title map-desc"
+          role="group"
+          aria-labelledby="map-title"
+          aria-describedby="map-desc"
           preserveAspectRatio="xMidYMid meet"
         >
           <title id="map-title">Simulated Stadium Crowd Density Map</title>

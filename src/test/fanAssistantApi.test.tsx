@@ -13,6 +13,24 @@ describe('Fan Assistant API Integration & Fallback Flow', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('provides persistent prompt and quick-command labels', () => {
+    render(<FanAssistant />);
+
+    expect(screen.getByRole('textbox', { name: 'Ask the Fan Operations Assistant' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Quick guidance prompt shortcuts' })).toBeInTheDocument();
+  });
+
+  it('uses non-animated transcript scrolling when reduced motion is requested', () => {
+    const scrollSpy = vi.spyOn(window.HTMLElement.prototype, 'scrollIntoView');
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));
+
+    render(<FanAssistant />);
+
+    expect(window.matchMedia).toHaveBeenCalledWith('(prefers-reduced-motion: reduce)');
+    expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'auto' });
   });
 
   it('renders Vertex AI via Cloud Run response on successful API call', async () => {
@@ -38,7 +56,7 @@ describe('Fan Assistant API Integration & Fallback Flow', () => {
       expect(screen.getByText((_, element) => element?.tagName === 'P' && element.textContent === 'Cloud Run Vertex AI guidance answer.')).toBeInTheDocument();
       expect(screen.getByText('Vertex AI', { selector: 'strong' })).toBeInTheDocument();
       expect(screen.getByText('Dispatch concourse team.')).toBeInTheDocument();
-      expect(screen.getByText(/Vertex AI via Cloud Run/i)).toBeInTheDocument();
+      expect(screen.getByText(/Vertex AI via Cloud Run/i, { selector: '.fan-source-badge' })).toBeInTheDocument();
     });
   });
 
@@ -51,7 +69,7 @@ describe('Fan Assistant API Integration & Fallback Flow', () => {
     fireEvent.click(quickPrompt);
 
     await waitFor(() => {
-      expect(screen.getByText(/Local deterministic fallback/i)).toBeInTheDocument();
+      expect(screen.getByText(/Local deterministic fallback/i, { selector: '.fan-source-badge' })).toBeInTheDocument();
       expect(screen.getByText(/Network error or connection failure/i)).toBeInTheDocument();
     });
   });
@@ -98,7 +116,7 @@ describe('Fan Assistant API Integration & Fallback Flow', () => {
     fireEvent.click(quickPrompt);
 
     await waitFor(() => {
-      expect(screen.getByText(/Local deterministic fallback/i)).toBeInTheDocument();
+      expect(screen.getByText(/Local deterministic fallback/i, { selector: '.fan-source-badge' })).toBeInTheDocument();
       expect(screen.getByText(/Response did not match expected schema/i)).toBeInTheDocument();
     });
   });
@@ -112,7 +130,7 @@ describe('Fan Assistant API Integration & Fallback Flow', () => {
 
     render(<FanAssistant />);
 
-    const input = screen.getByPlaceholderText(/Ask about gates/i);
+    const input = screen.getByRole('textbox', { name: 'Ask the Fan Operations Assistant' });
     const sendButton = screen.getByRole('button', { name: /Send/i });
 
     fireEvent.change(input, { target: { value: 'How crowded is Gate A?' } });
@@ -120,6 +138,8 @@ describe('Fan Assistant API Integration & Fallback Flow', () => {
 
     // Should immediately show loading
     expect(screen.getByText(/Generating guidance via Vertex AI/i)).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Generating fan guidance via Vertex AI.');
+    expect(screen.getByRole('region', { name: 'Assistant conversation' })).toHaveAttribute('aria-busy', 'true');
     expect(sendButton).toBeDisabled();
     expect(input).toBeDisabled();
 
@@ -143,6 +163,10 @@ describe('Fan Assistant API Integration & Fallback Flow', () => {
     await waitFor(() => {
       expect(screen.getByText('Gate A is at 90% capacity.')).toBeInTheDocument();
       expect(sendButton).not.toBeDisabled();
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Fan guidance ready. Source: Vertex AI via Cloud Run. Limitations: Simulated'
+      );
+      expect(screen.getByRole('region', { name: 'Assistant conversation' })).toHaveAttribute('aria-busy', 'false');
     });
   });
 

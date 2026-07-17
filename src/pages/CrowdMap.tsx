@@ -60,7 +60,7 @@ export const CrowdMap: React.FC<CrowdMapProps> = ({ initialVenueId, onOpenIncide
         )}
       />
 
-      <div className="disclaimer-banner crowd-map-page__disclaimer" role="alert">
+      <div className="disclaimer-banner crowd-map-page__disclaimer" role="note" aria-label="Simulated map notice">
         <strong>Important Simulated Notice:</strong> This map uses simulated prototype data and does not access external FIFA, venue, transit, ticketing, emergency, or current crowd systems. Current external systems are not connected. All visuals represent a prototype crowd map.
       </div>
 

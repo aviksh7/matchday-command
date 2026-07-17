@@ -30,6 +30,7 @@ describe('PageLoadBoundary', () => {
 
     const status = screen.getByRole('status');
     expect(status).toHaveAttribute('aria-live', 'polite');
+    expect(status).toHaveAttribute('aria-busy', 'true');
     expect(status).toHaveTextContent('Loading page…');
 
     await act(async () => {
@@ -59,6 +60,8 @@ describe('PageLoadBoundary', () => {
     });
 
     const alert = await screen.findByRole('alert');
+    expect(alert).toHaveAccessibleName('Page unavailable');
+    expect(alert).toHaveAccessibleDescription('This page could not be loaded. Reload the application to try again.');
     expect(alert).toHaveTextContent('Page unavailable');
     expect(alert).toHaveTextContent('This page could not be loaded. Reload the application to try again.');
     expect(alert).not.toHaveTextContent('assets.example');

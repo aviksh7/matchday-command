@@ -11,7 +11,7 @@ describe('Staff Command Center UI Dashboard Component', () => {
 
   it('renders the simulated disclaimer clearly', () => {
     render(<StaffCommand />);
-    const disclaimer = screen.getByRole('alert');
+    const disclaimer = screen.getByRole('note', { name: 'Simulated staff dashboard notice' });
     expect(disclaimer).toBeInTheDocument();
     expect(disclaimer.textContent).toContain('simulated prototype data');
     expect(disclaimer.textContent).toContain('does not access external FIFA');

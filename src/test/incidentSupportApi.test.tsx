@@ -38,8 +38,11 @@ describe('Incident Support API Integration & Fallback Flow', () => {
 
     await waitFor(() => {
       expect(screen.getByText('AI analysis of spill incident.')).toBeInTheDocument();
-      expect(screen.getByText(/Vertex AI via Cloud Run/i)).toBeInTheDocument();
+      expect(screen.getByText(/Vertex AI via Cloud Run/i, { selector: '.incident-source' })).toBeInTheDocument();
       expect(screen.getByText('Simulated data only.')).toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Decision-support draft ready for incident INC-201. Source: Vertex AI via Cloud Run. Limitations: Simulated data only.'
+      );
     });
 
     const invariantLimitations = screen.getByText(/Qualified human review is required/i);
@@ -57,7 +60,7 @@ describe('Incident Support API Integration & Fallback Flow', () => {
     fireEvent.click(incidentRowId);
 
     await waitFor(() => {
-      expect(screen.getByText(/Local deterministic fallback/i)).toBeInTheDocument();
+      expect(screen.getByText(/Local deterministic fallback/i, { selector: '.incident-source' })).toBeInTheDocument();
       expect(screen.getByText(/Network error or connection failure/i)).toBeInTheDocument();
     });
   });
@@ -76,7 +79,7 @@ describe('Incident Support API Integration & Fallback Flow', () => {
     fireEvent.click(incidentRowId);
 
     await waitFor(() => {
-      expect(screen.getByText(/Local deterministic fallback/i)).toBeInTheDocument();
+      expect(screen.getByText(/Local deterministic fallback/i, { selector: '.incident-source' })).toBeInTheDocument();
       expect(screen.getByText(/Response did not match expected schema/i)).toBeInTheDocument();
     });
   });
@@ -98,6 +101,16 @@ describe('Incident Support API Integration & Fallback Flow', () => {
 
     // Should immediately show loading
     expect(screen.getByText(/Generating Vertex AI guidance via Cloud Run/i)).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Generating decision-support guidance for incident SCEN-MOCK via Vertex AI.'
+    );
+    const pendingPanel = screen.getByRole('heading', {
+      level: 3,
+      name: /Decision Support Detail: SCEN-MOCK/i
+    }).closest('section');
+    expect(pendingPanel).toHaveAttribute('aria-busy', 'true');
+    expect(screen.queryByText(/Situation Summary:/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /Decision-Support Limitations/i })).not.toBeInTheDocument();
     expect(generateBtn).toBeDisabled();
     expect(scenarioTypeSelect).toBeDisabled();
     expect(venueSelect).toBeDisabled();
@@ -123,6 +136,10 @@ describe('Incident Support API Integration & Fallback Flow', () => {
     await waitFor(() => {
       expect(screen.getByText('Scenario AI summary.')).toBeInTheDocument();
       expect(generateBtn).not.toBeDisabled();
+      expect(pendingPanel).toHaveAttribute('aria-busy', 'false');
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Decision-support draft ready for incident SCEN-MOCK. Source: Vertex AI via Cloud Run. Limitations: Simulated data only.'
+      );
     });
   });
 

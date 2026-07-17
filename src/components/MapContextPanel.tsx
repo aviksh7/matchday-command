@@ -21,6 +21,38 @@ interface MapContextPanelProps {
   onOpenIncidentSupport: () => void;
 }
 
+const getSelectionAnnouncement = (venue: VenueData, selection: MapSelection | null) => {
+  if (!selection) {
+    return `Map selection cleared. Showing the ${venue.name} venue overview.`;
+  }
+
+  if (selection.kind === 'district') {
+    const zone = venue.zones.find(item => item.id === selection.id);
+    return zone
+      ? `Selected ${zone.name} district. ${zone.density} simulated density at ${zone.occupancyPercentage}% occupancy.`
+      : 'Map selection changed.';
+  }
+
+  if (selection.kind === 'gate') {
+    const gate = venue.gates.find(item => item.id === selection.id);
+    return gate
+      ? `Selected ${gate.name}. ${gate.isOpen ? 'Open' : 'Closed'} with ${gate.percentage}% simulated pressure.${gate.accessibleReady ? ' Accessibility-ready.' : ''}`
+      : 'Map selection changed.';
+  }
+
+  if (selection.kind === 'transit') {
+    const transit = venue.transitStatus.find(item => item.id === selection.id);
+    return transit
+      ? `Selected ${transit.type} transit node. ${transit.loadLevel} simulated load at ${transit.crowdPressurePercentage}% pressure.`
+      : 'Map selection changed.';
+  }
+
+  const incident = venue.incidents.find(item => item.id === selection.id);
+  return incident
+    ? `Selected incident ${incident.id}: ${incident.type}, ${incident.severity} severity, ${incident.status}.`
+    : 'Map selection changed.';
+};
+
 export const MapContextPanel: React.FC<MapContextPanelProps> = ({
   venue,
   selection,
@@ -148,12 +180,17 @@ export const MapContextPanel: React.FC<MapContextPanelProps> = ({
   };
 
   return (
-    <aside className={`map-context ${selection ? 'map-context--selected' : ''}`} aria-label="Selected map feature details" aria-live="polite">
-      {selection && (
-        <button className="map-context__clear" type="button" onClick={onClear}>Clear selection</button>
-      )}
-      {renderContent()}
-    </aside>
+    <>
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {getSelectionAnnouncement(venue, selection)}
+      </p>
+      <aside className={`map-context ${selection ? 'map-context--selected' : ''}`} aria-label="Selected map feature details">
+        {selection && (
+          <button className="map-context__clear" type="button" onClick={onClear}>Clear selection</button>
+        )}
+        {renderContent()}
+      </aside>
+    </>
   );
 };
 

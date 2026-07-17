@@ -11,7 +11,7 @@ describe('Incident Support UI Dashboard Component', () => {
 
   it('renders the simulated disclaimer clearly', () => {
     render(<IncidentSupport />);
-    const disclaimer = screen.getByRole('alert');
+    const disclaimer = screen.getByRole('note', { name: 'Simulated incident-support limitations' });
     expect(disclaimer).toBeInTheDocument();
     expect(disclaimer.textContent).toContain('simulated prototype data');
     expect(disclaimer.textContent).toContain('does not access external FIFA');

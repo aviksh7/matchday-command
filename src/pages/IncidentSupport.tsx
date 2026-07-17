@@ -198,13 +198,19 @@ export const IncidentSupport: React.FC = () => {
   // Get decision support outputs
   const relatedRisks = selectedIncident ? getRelatedVenueRisks(selectedIncident, venueSnapshot) : [];
   const localSupportSummary = selectedIncident ? normalizeLocalSummary(getIncidentSupportSummary(selectedIncident, venueSnapshot)) : null;
-  const supportSummary = (apiResult && selectedIncident && apiResult.incidentId === selectedIncident.id && apiResult.data)
-    ? apiResult.data
-    : localSupportSummary;
+  const supportSummary = isLoading
+    ? null
+    : (apiResult && selectedIncident && apiResult.incidentId === selectedIncident.id && apiResult.data)
+      ? apiResult.data
+      : localSupportSummary;
 
   return (
     <div className="page-container incident-support">
-      <div className="disclaimer-banner incident-support__notice" role="alert">
+      <div
+        className="disclaimer-banner incident-support__notice"
+        role="note"
+        aria-label="Simulated incident-support limitations"
+      >
         <strong>Important Simulated Notice:</strong> This incident support page uses simulated prototype data and does not access external FIFA, venue, transit, ticket, emergency, or current crowd systems. Every output is a simulated decision-support draft requiring qualified human review. Local status changes do not dispatch staff; announcement drafts are not published and carry no official authority.
       </div>
 

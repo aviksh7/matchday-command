@@ -57,7 +57,7 @@ export const IncidentDecisionSupportPanel: React.FC<IncidentDecisionSupportPanel
   isLoading,
   onStatusChange,
 }) => {
-  if (!incident || !summary) {
+  if (!incident) {
     return (
       <section className="card incident-panel incident-decision incident-decision--empty">
         <h3>Incident Details &amp; Decision Support</h3>
@@ -71,9 +71,23 @@ export const IncidentDecisionSupportPanel: React.FC<IncidentDecisionSupportPanel
   const sourceClass = source === 'Vertex AI via Cloud Run'
     ? 'incident-source--vertex'
     : 'incident-source--fallback';
+  const resolvedSource = source || 'Local deterministic fallback';
+  const generationAnnouncement = isLoading
+    ? `Generating decision-support guidance for incident ${incident.id} via Vertex AI.`
+    : summary
+      ? `Decision-support draft ready for incident ${incident.id}. Source: ${resolvedSource}. Limitations: ${summary.limitations}`
+      : `No decision-support draft is available for incident ${incident.id}.`;
 
   return (
-    <section className="card incident-panel incident-decision" aria-labelledby="incident-decision-title">
+    <>
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {generationAnnouncement}
+      </p>
+      <section
+        className="card incident-panel incident-decision"
+        aria-labelledby="incident-decision-title"
+        aria-busy={isLoading}
+      >
       <header className="incident-decision__header">
         <div>
           <h3 id="incident-decision-title">Decision Support Detail: {incident.id}</h3>
@@ -88,16 +102,18 @@ export const IncidentDecisionSupportPanel: React.FC<IncidentDecisionSupportPanel
 
       <div className="incident-decision__source">
         {isLoading ? (
-          <span className="incident-source incident-source--loading" role="status" aria-live="polite">
+          <span className="incident-source incident-source--loading">
             <span className="inline-icon-label">
               <Icon name="spark" size={14} />
               Generating Vertex AI guidance via Cloud Run...
             </span>
           </span>
-        ) : (
-          <span className={`incident-source ${sourceClass}`} role="status">
-            {source || 'Local deterministic fallback'}
+        ) : summary ? (
+          <span className={`incident-source ${sourceClass}`}>
+            {resolvedSource}
           </span>
+        ) : (
+          <span className="incident-source incident-source--fallback">Draft unavailable</span>
         )}
 
         {fallbackReason && !isLoading && (
@@ -106,63 +122,69 @@ export const IncidentDecisionSupportPanel: React.FC<IncidentDecisionSupportPanel
           </p>
         )}
       </div>
+      {!isLoading && summary ? (
+        <>
+          <aside className="incident-decision__limitations" aria-labelledby="incident-limitations-title">
+            <h4 id="incident-limitations-title">Decision-Support Limitations</h4>
+            <p>{summary.limitations}</p>
+            <p>
+              Qualified human review is required. This prototype does not dispatch staff, publish announcements,
+              contact emergency services, or carry official authority.
+            </p>
+          </aside>
 
-      <aside className="incident-decision__limitations" aria-labelledby="incident-limitations-title">
-        <h4 id="incident-limitations-title">Decision-Support Limitations</h4>
-        <p>{summary.limitations}</p>
-        <p>
-          Qualified human review is required. This prototype does not dispatch staff, publish announcements,
-          contact emergency services, or carry official authority.
-        </p>
-      </aside>
+          <div className="incident-decision__section">
+            <h4>Related Simulated Operations Risks</h4>
+            <ul>
+              {relatedRisks.map((risk, index) => <li key={`${index}-${risk}`}>{risk}</li>)}
+            </ul>
+          </div>
 
-      <div className="incident-decision__section">
-        <h4>Related Simulated Operations Risks</h4>
-        <ul>
-          {relatedRisks.map((risk, index) => <li key={`${index}-${risk}`}>{risk}</li>)}
-        </ul>
-      </div>
+          <div className="incident-summary">
+            <strong>Situation Summary:</strong>
+            <p>{summary.situationSummary}</p>
+          </div>
 
-      <div className="incident-summary">
-        <strong>Situation Summary:</strong>
-        <p>{summary.situationSummary}</p>
-      </div>
+          <p className="incident-priority">
+            Priority Support Level:{' '}
+            <strong className={`incident-priority--${summary.priorityLevel.toLowerCase()}`}>
+              {summary.priorityLevel}
+            </strong>
+          </p>
 
-      <p className="incident-priority">
-        Priority Support Level:{' '}
-        <strong className={`incident-priority--${summary.priorityLevel.toLowerCase()}`}>
-          {summary.priorityLevel}
-        </strong>
-      </p>
+          <div className="incident-decision__section">
+            <h4>Response Planning Draft Checklist</h4>
+            <ol>
+              {summary.recommendedActions.map((step, index) => <li key={`${index}-${step}`}>{step}</li>)}
+            </ol>
+          </div>
 
-      <div className="incident-decision__section">
-        <h4>Response Planning Draft Checklist</h4>
-        <ol>
-          {summary.recommendedActions.map((step, index) => <li key={`${index}-${step}`}>{step}</li>)}
-        </ol>
-      </div>
+          <div className="incident-decision__section">
+            <h4>Prototype Staff Briefing Guidelines</h4>
+            <pre className="incident-briefing">{summary.volunteerBriefing}</pre>
+          </div>
 
-      <div className="incident-decision__section">
-        <h4>Prototype Staff Briefing Guidelines</h4>
-        <pre className="incident-briefing">{summary.volunteerBriefing}</pre>
-      </div>
+          <div className="incident-decision__section">
+            <h4>Prototype Fan Announcement Draft</h4>
+            <p className="incident-announcement">{summary.fanAnnouncementDraft}</p>
+          </div>
 
-      <div className="incident-decision__section">
-        <h4>Prototype Fan Announcement Draft</h4>
-        <p className="incident-announcement">{summary.fanAnnouncementDraft}</p>
-      </div>
+          <div className="incident-decision__notes">
+            <p>{summary.accessibilityNote}</p>
+            <p>{summary.crowdTransitNote}</p>
+          </div>
 
-      <div className="incident-decision__notes">
-        <p>{summary.accessibilityNote}</p>
-        <p>{summary.crowdTransitNote}</p>
-      </div>
-
-      <p className="incident-decision__grounding">
-        {Array.isArray(summary.simulatedDataUsed)
-          ? summary.simulatedDataUsed.join(', ')
-          : summary.simulatedDataUsed}
-      </p>
-    </section>
+          <p className="incident-decision__grounding">
+            {Array.isArray(summary.simulatedDataUsed)
+              ? summary.simulatedDataUsed.join(', ')
+              : summary.simulatedDataUsed}
+          </p>
+        </>
+      ) : !isLoading ? (
+        <p>No decision-support draft is available for this simulated incident.</p>
+      ) : null}
+      </section>
+    </>
   );
 };
 

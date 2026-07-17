@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from '../App';
 
 describe('Matchday Command Base Application', () => {
@@ -25,6 +25,37 @@ describe('Matchday Command Base Application', () => {
     render(<App />);
     expect(screen.getByText(/SIMULATED PROTOTYPE — venue, crowd, transit and incident data are simulated/i)).toBeInTheDocument();
     expect(screen.getByText(/No external operational systems are connected/i)).toBeInTheDocument();
+  });
+
+  it('provides skip navigation and moves focus to the main landmark after page changes', async () => {
+    render(<App />);
+
+    const skipLink = screen.getByRole('link', { name: 'Skip to main content' });
+    const main = screen.getByRole('main');
+    expect(skipLink).toHaveAttribute('href', '#main-content');
+    expect(main).toHaveAttribute('id', 'main-content');
+    expect(main).toHaveAttribute('tabindex', '-1');
+
+    fireEvent.click(skipLink);
+    expect(main).toHaveFocus();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fan Assistant' }));
+    expect(await screen.findByRole('heading', { level: 2, name: 'Fan Operations Assistant' })).toBeInTheDocument();
+    await waitFor(() => expect(main).toHaveFocus());
+    expect(document.title).toBe('Fan Assistant | Matchday Command');
+  });
+
+  it('moves focus into the open mobile menu and returns it on Escape', async () => {
+    render(<App />);
+
+    const menuButton = screen.getByRole('button', { name: 'Menu' });
+    fireEvent.click(menuButton);
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Home' })).toHaveFocus());
+    fireEvent.keyDown(screen.getByRole('navigation', { name: 'Primary navigation' }), { key: 'Escape' });
+
+    expect(menuButton).toHaveAttribute('aria-expanded', 'false');
+    expect(menuButton).toHaveFocus();
   });
 
   it('exposes mobile navigation state and returns to Home through the brand control', async () => {
